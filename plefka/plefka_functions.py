@@ -272,6 +272,121 @@ def update_C_P2_t_o2(H, J, m, m_p, C_p):
     np.einsum('ii->i', C_D)[:] = 1 - m**2
     return C_D
 
+################
+# NEW METHODS
+################
+
+
+def broadcast_columns(vec, size):
+    '''
+    Creates a matrix where each column is a copy of the vector vec
+    '''
+    return np.einsum('j,k->jk', vec, np.ones(size))
+
+def broadcast_rows(vec, size):
+    """
+    Creates a matrix where each row is a copy of the vector vec
+    """
+    return np.einsum('j,k->kj', vec, np.ones(size))
+
+
+def update_m_P_CMS(H, J, m_p, C_p):
+    size = len(H)
+
+    m_pl = broadcast_columns(m_p, size)
+    mjl_p = m_pl + np.einsum('jl,l->jl', C_p, (1 - m_p) / (1 - m_p ** 2 + np.finfo(float).eps * (m_p ** 2 == 1)))
+    mjl_n = m_pl + np.einsum('jl,l->jl', C_p, (-1 - m_p) / (1 - m_p ** 2 + np.finfo(float).eps * (m_p ** 2 == 1)))
+    mjl_p[:, m_p ** 2 == 1] = m_pl[:, m_p ** 2 == 1]
+    mjl_n[:, m_p ** 2 == 1] = m_pl[:, m_p ** 2 == 1]
+
+    mil_p = np.zeros((size, size))
+    mil_n = np.zeros((size, size))
+
+    for l in range(0, size):
+        g_p = H + np.matmul(J, mjl_p[:, l])
+        delta_p = np.matmul(J ** 2, (1 - mjl_p[:, l] ** 2))
+
+        g_n = H + np.matmul(J, mjl_n[:, l])
+        delta_n = np.matmul(J ** 2, (1 - mjl_n[:, l] ** 2))
+
+        x_domain = 4
+        mil_p[:, l] = integrate_1DGaussian_optimized(g_p, delta_p, x_domain)
+        mil_n[:, l] = integrate_1DGaussian_optimized(g_n, delta_n, x_domain)
+
+    # m_p is broadcasted by rows. Each row of mil_p is multiplied (elementwise) by (1 + m_p).
+    # Each row of mil_n is multiplied by (elementwise) (1 - m_p)
+    m_l = mil_p * (1 + m_p) / 2 + mil_n * (1 - m_p) / 2
+    m = np.mean(m_l, axis=1)
+    D = (1 + m_p) / 2 * mil_p - (1 - m_p) / 2 * mil_n - m_l * m_p
+
+    return m, D
+
+
+def update_C_P_CMS(H, J, m_p, m, D):
+
+    size = len(m)
+
+    m_pk = broadcast_columns(m_p, size)
+    mjk_p = m_pk + np.einsum('kj,k->jk', D, (1 - m) / (1 - m ** 2 + np.finfo(float).eps * (m ** 2 == 1)))
+    mjk_n = m_pk + np.einsum('kj,k->jk', D, (-1 - m) / (1 - m ** 2 + np.finfo(float).eps * (m ** 2 == 1)))
+    mjk_p[:, m ** 2 == 1] = m_pk[:, m ** 2 == 1]
+    mjk_n[:, m ** 2 == 1] = m_pk[:, m ** 2 == 1]
+
+    # m_pos_0, m_neg_0 = self.m_sk(self.m_0, m, D)
+
+    mik_p = np.zeros((size, size))
+    mik_n = np.zeros((size, size))
+    for k in range(0, size):
+        g_p = H + np.matmul(J, mjk_p[:, k])
+        delta_p = np.matmul(J ** 2, (1 - mjk_p[:, k] ** 2))
+
+        g_n = H + np.matmul(J, mjk_n[:, k])
+        delta_n = np.matmul(J ** 2, (1 - mjk_n[:, k] ** 2))
+
+        x_domain = 4
+        mik_p[:, k] = integrate_1DGaussian_optimized(g_p, delta_p, x_domain)
+        mik_n[:, k] = integrate_1DGaussian_optimized(g_n, delta_n, x_domain)
+
+    # m is broadcasted by rows. Each row of mik_p is multiplied (elementwise) by (1 + m).
+    # Each row of mik_n is multiplied (elementwise) by (1 - m)
+    m_ik = mik_p * (1 + m) / 2 + mik_n * (1 - m) / 2
+    C = mik_p * (1 + m) / 2 - mik_n * (1 - m) / 2 - m_ik * m
+    C = 0.5 * (C + C.T)
+    np.fill_diagonal(C, 1 - m ** 2)
+
+    return C
+
+def integrate_1DGaussian_optimized(g, D, x_domain):
+    x = np.linspace(-x_domain, x_domain, num=20)
+    m = trapezoid_area(x, g, D)
+    m[:,[0,-1]] = m[:,[0,-1]]/2
+    m = np.sum(m, axis=1)*(x[1]-x[0])
+    return m
+
+
+def trapezoid_area(x, g, D):
+    return 1 / np.sqrt(2 * np.pi) * np.exp(-0.5 * x**2) * np.tanh(g[:,np.newaxis] + np.einsum('i, j -> ij', np.sqrt(D), x))
+
+
+# Code for Belief Propagation
+def bp(H, J, m_p, TOL=1E-10):
+    size = len(H)
+    m_jp = np.einsum('i,j->ij', np.ones(size), m_p, optimize=True)
+    H_j = np.einsum('i,j->ij', H, np.ones(size), optimize=True)
+    theta = np.zeros(size)
+    zeta = np.zeros((size, size))
+
+    error = 1
+    while error > TOL:
+        theta_p = theta.copy()
+        pi = np.arctanh(np.tanh(H_j + zeta + J) * (1 + m_jp) / 2 + np.tanh(H_j + zeta - J) * (1 - m_jp) / 2) - H_j
+        theta = np.einsum('ij->i', pi - zeta, optimize=True)
+        zeta = theta - (pi - zeta)
+        error = np.max(np.abs(theta - theta_p))
+    m = np.tanh(H + theta)
+    return m
+
+
 # PLEFKA_C (Old code from https://arxiv.org/abs/2002.04309v1)
 # def correlation_Ising_2nodes(Heff_i, Heff_j, Jeff):
 #    size=Heff_i.shape[0]

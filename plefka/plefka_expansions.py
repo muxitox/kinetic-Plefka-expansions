@@ -137,3 +137,12 @@ class mf_ising:
         self.m, self.D = update_D_P2_t_o2(
             self.H, self.J, self.m_p, self.C_p, self.D_p)
         self.C = update_C_P2_t_o2(self.H, self.J, self.m, self.m_p, self.C_p)
+
+    def update_P_CMS(self):
+        """
+        Update mean field  Conditional MS approximation ANGEL
+        """
+        self.m_p = self.m.copy()
+        self.C_p = self.C.copy()
+        self.m, self.D = update_m_P_CMS(self.H, self.J, self.m_p, self.C_p)
+        self.C = update_C_P_CMS(self.H, self.J, self.m_p, self.m, self.D)
