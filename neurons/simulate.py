@@ -36,7 +36,7 @@ m = mexp.copy()
 C = Cexp.copy() * 0
 D = Dexp.copy() * 0
 
-T = 100
+T = 70
 m_mean = np.zeros(T)
 C_mean = np.zeros(T)
 D_mean = np.zeros(T)

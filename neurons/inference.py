@@ -63,7 +63,7 @@ J = np.zeros((N, N))
 rep = 0
 rep_min = 0
 
-gamma = 0.80
+gamma = 0.77
 # gamma=1
 Dexp1 = (Dexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) / gamma - (1 - gamma) / gamma * (
             Cexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) - np.einsum('i,l->il', mexp, mexp, optimize=True)
