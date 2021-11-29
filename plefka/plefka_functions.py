@@ -298,6 +298,8 @@ def update_m_P_CMS(H, J, m_p, C_p):
     mjl_n = m_pl + np.einsum('jl,l->jl', C_p, (-1 - m_p) / (1 - m_p ** 2 + np.finfo(float).eps * (m_p ** 2 == 1)))
     mjl_p[:, m_p ** 2 == 1] = m_pl[:, m_p ** 2 == 1]
     mjl_n[:, m_p ** 2 == 1] = m_pl[:, m_p ** 2 == 1]
+    mjl_n = np.clip(mjl_n, -1, 1)
+    mjl_p = np.clip(mjl_p, -1, 1)
 
     mil_p = np.zeros((size, size))
     mil_n = np.zeros((size, size))
@@ -331,6 +333,8 @@ def update_C_P_CMS(H, J, m_p, m, D):
     mjk_n = m_pk + np.einsum('kj,k->jk', D, (-1 - m) / (1 - m ** 2 + np.finfo(float).eps * (m ** 2 == 1)))
     mjk_p[:, m ** 2 == 1] = m_pk[:, m ** 2 == 1]
     mjk_n[:, m ** 2 == 1] = m_pk[:, m ** 2 == 1]
+    mjk_n = np.clip(mjk_n, -1, 1)
+    mjk_p = np.clip(mjk_p, -1, 1)
 
     # m_pos_0, m_neg_0 = self.m_sk(self.m_0, m, D)
 
