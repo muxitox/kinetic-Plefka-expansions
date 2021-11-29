@@ -3,8 +3,8 @@
 
 import numpy as np
 from matplotlib import pyplot as plt
-from plefka_expansions import mf_ising
-from plefka_functions import update_m_P_CMS, update_C_P_CMS
+from plefka.plefka_functions import update_m_P_CMS, update_C_P_CMS
+import os
 
 plt.rc('text', usetex=True)
 font = {'size': 15}
@@ -36,7 +36,7 @@ m = mexp.copy()
 C = Cexp.copy() * 0
 D = Dexp.copy() * 0
 
-T = 70
+T = 128
 m_mean = np.zeros(T)
 C_mean = np.zeros(T)
 D_mean = np.zeros(T)
@@ -69,6 +69,22 @@ for t in range(T):
     print(t)
     print(m_mean[t], C_mean[t], D_mean[t])
     print(np.mean(mexp), np.mean(Cexp[iu1]), np.mean(Dexp))
+
+
+folder = 'moments'
+isExist = os.path.exists(folder)
+if not isExist:
+    # Create a new directory because it does not exist
+    os.makedirs(folder)
+filename = folder + '/mom_' + str(dataset) + '.npz'
+np.savez_compressed(filename,
+                    mean_m_t=m_mean,
+                    mean_C_t=C_mean,
+                    mean_D_t=D_mean,
+                    final_m_t=m,
+                    final_C_t=C,
+                    final_D_t=D
+                    )
 
 plt.figure()
 plt.plot([min(mexp), max(mexp)], [min(mexp), max(mexp)], 'k')

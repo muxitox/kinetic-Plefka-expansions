@@ -6,8 +6,10 @@ Created on Wed Dec  5 15:45:08 2018
 @author: maguilera
 """
 
-from mf_ising import mf_ising
-from plefka_functions import update_m_P_CMS, update_C_P_CMS
+import os
+
+from plefka import mf_ising
+from plefka.plefka_functions import update_m_P_CMS, update_C_P_CMS
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import cm
@@ -45,7 +47,7 @@ plt.hist(Dexp[iu1], 100)
 
 eta = 1
 error_ref = 0.0001
-max_rep = 5000
+max_rep = 2150
 # error_ref=0.05
 
 etaH = eta
@@ -66,7 +68,7 @@ rep_min = 0
 gamma = 0.77
 # gamma=1
 Dexp1 = (Dexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) / gamma - (1 - gamma) / gamma * (
-            Cexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) - np.einsum('i,l->il', mexp, mexp, optimize=True)
+        Cexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) - np.einsum('i,l->il', mexp, mexp, optimize=True)
 
 while error > error_ref:
 
@@ -80,9 +82,9 @@ while error > error_ref:
     m1, D1 = update_m_P_CMS(H, J, mexp, Cexp)
     Cn = update_C_P_CMS(H, J, mexp, m1, D1)
     C1 = (1 - gamma) ** 2 * (Cexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) + gamma * (1 - gamma) * (
-                D1 + np.einsum('i,l->il', m1, mexp, optimize=True) + D1.T + np.einsum('i,l->li', m1, mexp,
-                                                                                      optimize=True)) + gamma ** 2 * (
-                     Cn + np.einsum('i,l->il', m1, m1, optimize=True)) - np.einsum('i,l->il', m1, m1, optimize=True)
+            D1 + np.einsum('i,l->il', m1, mexp, optimize=True) + D1.T + np.einsum('i,l->li', m1, mexp,
+                                                                                  optimize=True)) + gamma ** 2 * (
+                 Cn + np.einsum('i,l->il', m1, m1, optimize=True)) - np.einsum('i,l->il', m1, m1, optimize=True)
     C1[range(N), range(N)] = 1 - m1 ** 2
 
     DJ = Dexp1 - D1
@@ -95,12 +97,16 @@ while error > error_ref:
     #	np.clip(I.J,-1/N/10,1/N/10)
     #	if np.max(np.abs(DH))>np.max(np.abs(DJ)):
     H += etaH * DH
-    if rep % 10 == 0:
+    if rep % 50 == 0:
         print('P_o2', rep, np.max(np.abs(DH)), np.max(np.abs(DJ)))
-        print('P_o2', 'moments', nsf(np.mean(mexp)), nsf(np.mean(Dexp1[iu1])), nsf(np.mean(np.diag(Dexp1))), '|',
+        print('P_o2, moments: mean(m_exp), mean(triu(D_exp)), mean(diag(D_exp)) | mean(m), mean(triu(D)), mean(diag(D))')
+        print('P_o2,', 'moments:', nsf(np.mean(mexp)), nsf(np.mean(Dexp1[iu1])), nsf(np.mean(np.diag(Dexp1))), '|',
               nsf(np.mean(m1)), nsf(np.mean(D1[iu1])), nsf(np.mean(np.diag(D1))))
-        print(nsf(np.mean(Cexp[iu1])), nsf(np.mean(C1[iu1])))
-        print(np.mean((m1 - mexp)) ** 2, np.mean((D1 - Dexp1) ** 2), np.mean((C1 - Cexp) ** 2))
+        print('P_o2, moments: mean(triu(C_exp)), mean(diag(C_exp)) | mean(triu(C)), mean(diag(C))')
+        print('P_o2, moments:', nsf(np.mean(Cexp[iu1])), nsf(np.mean(np.diag(Cexp))), nsf(np.mean(C1[iu1])), nsf(np.mean(np.diag(C1))))
+        print('General MSE m', np.mean((m1 - mexp)) ** 2, 'D', np.mean((D1 - Dexp1) ** 2), 'C', np.mean((C1 - Cexp) ** 2))
+        print('TRIU MSE m', np.mean((m1 - mexp)) ** 2, 'D', np.mean((D1[iu1] - Dexp1[iu1]) ** 2), 'C', np.mean((C1[iu1] - Cexp[iu1]) ** 2))
+        print()
 
     rep += 1
     rep_min += 1
@@ -108,7 +114,13 @@ while error > error_ref:
         print(error < error_ref, rep > max_rep)
         break
 
-filename = 'networks/net_' + str(dataset) + '.npz'
+folder = 'networks'
+isExist = os.path.exists(folder)
+if not isExist:
+    # Create a new directory because it does not exist
+    os.makedirs(folder)
+
+filename = folder + '/net_' + str(dataset) + '.npz'
 np.savez_compressed(filename, H=H, J=J, N=N, gamma=gamma)
 
 exit()

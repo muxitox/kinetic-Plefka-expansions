@@ -5,6 +5,7 @@ import scipy.io
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.sparse import csr_matrix
+import os
 
 dataset=1
 filename='data/DataSet'+str(dataset)+'.mat'
@@ -16,9 +17,8 @@ spikes=data[0][0][0]
 
 N=len(spikes)
 
-r=20
-r=80
-T=3600000//r
+r=70
+T=int(np.ceil(3600000/r))
 X=csr_matrix((N,T))
 for n in range(N):
 	ts = spikes[n][0][0]
@@ -35,13 +35,13 @@ for n in range(N):
 
 X=X[:,500:]
 
-
 S=X.sum(axis=1)
 S=np.asarray(S).reshape(-1).astype(int)
 print(sorted(S))
 print(min(S))
 
 thS=60*10
+thS = 0
 print(len(S),sum(S>thS))
 
 N=sum(S>thS)
@@ -173,7 +173,13 @@ del X
 
 C[range(N),range(N)] = 1 - m**2
 
-filename = 'stats/stats'+str(dataset)+'.npz'
+folder = 'stats'
+isExist = os.path.exists(folder)
+if not isExist:
+	# Create a new directory because it does not exist
+	os.makedirs(folder)
+
+filename = folder + '/stats'+str(dataset)+'.npz'
 np.savez_compressed(filename,m=m, C=C,D=D,r=r,N=N,T=T)
 
 
