@@ -47,30 +47,43 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
 
     def sim_fit(self):
 
-        R = 100
         T = 100
-
-        derJ = 0
-        derK = 0
-        derL = 0
-
+        # Produce the data:
+        s = []
         for t in range(0,T):
-            for r in range(0,R):
-                self.ising.ParallelUpdate()
-                s = self.ising.s
+            self.ising.ParallelUpdate()
+            s.append(self.ising.s)
 
-                if r != 0:
+        LderJ_accum = 0
+        LderK_accum = 0
+        LderL_accum = 0
 
-                    self.b = np.tanh(np.dot(self.K, s_p) + np.dot(self.L*b_p))
-                    tanh_h = np.tanh(self.b + np.dot(self.J, s_p))
+        rep = 0
+        max_reps = 200
+        error_lim = 0.0001
+        error = np.inf
+        while error > error_lim:
+            for t in range(0,T):
+                if t != 0:
+
                     # Compute quantities for the gradients
-                    sub_s_h = s - tanh_h
+                    self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L*b_p))
+                    tanh_h = np.tanh(self.b + np.dot(self.J, s[t-1]))
+                    sub_s_h = s[t] - tanh_h
 
-                    derJ += np.dot(sub_s_h, s_p)
+                    LderJ_accum += np.dot(sub_s_h, s[t-1])
 
+                    if r == 1:
 
-                s_p = copy.deepcopy(s)
+                    else:
+
                 b_p = copy.deepcopy(self.b)
+
+
+            rep = rep + 1
+            if rep > max_reps:
+                break
+
 
 if __name__=="__main__":
 
