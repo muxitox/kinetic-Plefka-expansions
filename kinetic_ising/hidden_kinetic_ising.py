@@ -50,18 +50,27 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         R = 100
         T = 100
 
+        derJ = 0
+        derK = 0
+        derL = 0
+
         for t in range(0,T):
             for r in range(0,R):
                 self.ising.ParallelUpdate()
-                s = self.ising.s()
-
+                s = self.ising.s
 
                 if r != 0:
+
+                    self.b = np.tanh(np.dot(self.K, s_p) + np.dot(self.L*b_p))
+                    tanh_h = np.tanh(self.b + np.dot(self.J, s_p))
                     # Compute quantities for the gradients
-                    corr = np.einsum('i,j->ij', s, s0, optimize=True)
+                    sub_s_h = s - tanh_h
+
+                    derJ += np.dot(sub_s_h, s_p)
 
 
-                s0 = copy.deepcopy(s)
+                s_p = copy.deepcopy(s)
+                b_p = copy.deepcopy(self.b)
 
 if __name__=="__main__":
 
