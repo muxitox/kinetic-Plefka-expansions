@@ -54,6 +54,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             self.ising.ParallelUpdate()
             s.append(self.ising.s)
 
+        eta = 0.1
         LderJ_accum = 0
         LderK_accum = 0
         LderL_accum = 0
@@ -92,13 +93,16 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 bderK_p2 = copy.deepcopy(bderK_p)
                 bderL_p2 = copy.deepcopy(bderL_p)
 
+            self.J = self.J + eta * LderJ_accum
+            self.K = self.K + eta * LderK_accum
+            self.L = self.L + eta * LderL_accum
 
             rep = rep + 1
             if rep > max_reps:
                 break
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     kinetic_ising = ising(netsize=10)
     hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.7, b_size=None)
