@@ -18,7 +18,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         self.ising = original_ising
         self.size = self.ising.size
 
-        self.visible_size = self.size * visible_units_per  # Network size
+        self.visible_size = int(self.size * visible_units_per)  # Network size
         self.hidden_size = self.size - self.visible_size
         self.H = np.zeros(self.visible_size)  # Fields
         self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
@@ -30,7 +30,6 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         else:
             self.b_size = self.hidden_size
 
-        self.b = np.zeros(self.b_size)  # Fields
 
         # visible_units = np.ones(self.size)
         # self.hidden_idx = random.sample(range(0, self.ising.size), self.hidden_size)
@@ -71,11 +70,13 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             LdK = 0
             LdL = 0
 
+            self.b = np.zeros(self.b_size)  # Variable fields Fields
+
             # We start in index 1 because we dont have s_{t-1} for t=0
             for t in range(1, T):
 
                 # Compute the derivative of the Likelihood wrt J
-                self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L*b_p))
+                self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L, b_p))
                 tanh_h = np.tanh(self.b + np.dot(self.J, s[t-1]))
                 sub_s_h = s[t] - tanh_h
 
@@ -112,5 +113,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
 if __name__ == "__main__":
 
     kinetic_ising = ising(netsize=10)
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.7, b_size=None)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.7, b_size=1)
+
+    hidden_ising.sim_fit()
 
