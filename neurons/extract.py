@@ -1,6 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Created on Wed Dec  5 15:45:08 2018
+
+Hyperparameters for learning dataset 1 from https://crcns.org/data-sets/ssc/ssc-3/about-ssc-3
+according to "Inference in neural networks using conditional mean-field methods" (https://arxiv.org/abs/2107.06850)
+
+r(extraction): 70 ms
+gamma(inference&simulation): 0.70
+eta(inference): 1
+T(simulation): 128
+max_rep(inference): 2150
+
+Exact hyperparameters are missing due to a data loss resulting from a mechanical failure in a Hard Drive
+
+@author: maguilera and Angel Poc
+"""
+
 import scipy.io
 import numpy as np
 from matplotlib import pyplot as plt
