@@ -66,18 +66,31 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             for t in range(0,T):
                 if t != 0:
 
-                    # Compute quantities for the gradients
+                    # Compute the derivative of the Likelihood wrt J
                     self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L*b_p))
                     tanh_h = np.tanh(self.b + np.dot(self.J, s[t-1]))
                     sub_s_h = s[t] - tanh_h
 
                     LderJ_accum += np.dot(sub_s_h, s[t-1])
 
-                    if r == 1:
-
+                    # Compute the derivatives of the Likelihood wrt L and K
+                    if t == 1:
+                        # We need the derivative of b wrt K and L, and that'd require s_{t-2}
+                        # Which does not exist at this time step
+                        bderK_p = 0
+                        bderL_p = 0
                     else:
+                        sub_b_1_sq = 1 - b_p ** 2
+                        bderK_p = np.dot(s[t-2] + np.dot(self.L, bderK_p2), sub_b_1_sq)
+                        bderL_p = np.dot(s[t-2] + np.dot(self.L, bderL_p2), sub_b_1_sq)
+
+                    sub_b_sq = 1 - self.b**2
+                    LderK_accum += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, bderK_p))), sub_b_sq)
+                    LderL_accum += np.dot(np.dot(sub_s_h, (b_p + np.dot(self.L, bderL_p))), sub_b_sq)
 
                 b_p = copy.deepcopy(self.b)
+                bderK_p2 = copy.deepcopy(bderK_p)
+                bderL_p2 = copy.deepcopy(bderL_p)
 
 
             rep = rep + 1
