@@ -86,20 +86,28 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 if t == 1:
                     # We need the derivative of b wrt K and L, and that'd require s_{t-2}
                     # Which does not exist at this time step
-                    bdK_p = 0
-                    bdL_p = 0
+                    bdK_p = np.zeros((self.visible_size, self.visible_size))
+                    bdL_p = np.zeros((self.visible_size, self.b_size))
                 else:
                     sub_b_1_sq = 1 - b_p ** 2
-                    bdK_p = np.dot(s[t-2] + np.dot(self.L, bdK_p2), sub_b_1_sq)
-                    bdL_p = np.dot(s[t-2] + np.dot(self.L, bdL_p2), sub_b_1_sq)
+                    bdK_p = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, bdK_p2))
+                    bdL_p = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, bdL_p2))
 
                 sub_b_sq = 1 - self.b**2
-                LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, bdK_p))), sub_b_sq)
+                # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, bdK_p))), sub_b_sq)
+                # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, bdK_p))), sub_b_sq)
+                print(sub_s_h * sub_b_sq)
+                print(bdK_p)
+                print(np.dot(self.L, bdK_p))
+                LdK += (sub_s_h * sub_b_sq) # missing terms
+
+                exit()
+
                 LdL += np.dot(np.dot(sub_s_h, (b_p + np.dot(self.L, bdL_p))), sub_b_sq)
 
-            b_p = copy.deepcopy(self.b)
-            bdK_p2 = copy.deepcopy(bdK_p)
-            bdL_p2 = copy.deepcopy(bdL_p)
+                b_p = copy.deepcopy(self.b)
+                bdK_p2 = copy.deepcopy(bdK_p)
+                bdL_p2 = copy.deepcopy(bdL_p)
 
             self.J = self.J + eta * LdJ
             self.K = self.K + eta * LdK
