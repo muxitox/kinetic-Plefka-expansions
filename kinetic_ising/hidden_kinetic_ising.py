@@ -20,15 +20,19 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
 
         self.visible_size = int(self.size * visible_units_per)  # Network size
         self.hidden_size = self.size - self.visible_size
-        self.H = np.zeros(self.visible_size)  # Fields
-        self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
-        self.K = np.zeros((self.visible_size, self.visible_size))  # Hidden-to-Neuron couplings
-        self.L = np.zeros((self.visible_size, self.visible_size))  # Hidden-to-Hidden couplings
 
         if b_size:
             self.b_size = b_size
         else:
             self.b_size = self.hidden_size
+
+        # self.H = np.zeros(self.visible_size)  # Fields
+        self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
+        self.K = np.zeros((self.visible_size, self.visible_size))  # Hidden-to-Neuron couplings
+        self.L = np.zeros((self.visible_size, self.b_size))  # Hidden-to-Hidden couplings
+        self.b = np.zeros(self.b_size)
+
+
 
 
         # visible_units = np.ones(self.size)
@@ -36,13 +40,10 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         self.visible_idx = random.sample(range(0, self.ising.size), self.visible_size)
         # visible_units[hidden_idx] = 0
 
-    def random_fields(self):  # Set random values for H
-        self.H = np.random.rand(self.size) * 2 - 1
-
     def random_wiring(self):  # Set random values for J
-        self.J = np.random.randn(self.size, self.size) / self.size
-        self.K = np.random.randn(self.size, self.size) / self.size
-        self.L = np.random.randn(self.size, self.size) / self.size
+        self.J = np.random.randn(self.visible_size, self.visible_size) / self.visible_size
+        self.K = np.random.randn(self.visible_size, self.visible_size) / self.visible_size
+        self.L = np.random.randn(self.visible_size, self.b_size) / self.visible_size
 
 
     def sim_fit(self):
@@ -70,7 +71,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             LdK = 0
             LdL = 0
 
-            self.b = np.zeros(self.b_size)  # Variable fields Fields
+            b_p = np.zeros(self.b_size)  # Variable fields Fields
 
             # We start in index 1 because we dont have s_{t-1} for t=0
             for t in range(1, T):
@@ -79,8 +80,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L, b_p))
                 tanh_h = np.tanh(self.b + np.dot(self.J, s[t-1]))
                 sub_s_h = s[t] - tanh_h
-
-                LdJ += np.dot(sub_s_h, s[t-1])
+                LdJ += np.einsum('i,j->ij', sub_s_h, s[t-1])
 
                 # Compute the derivatives of the Likelihood wrt L and K
                 if t == 1:
@@ -114,6 +114,7 @@ if __name__ == "__main__":
 
     kinetic_ising = ising(netsize=10)
     hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.7, b_size=1)
+    hidden_ising.random_wiring()
 
     hidden_ising.sim_fit()
 
