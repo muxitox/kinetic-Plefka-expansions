@@ -71,13 +71,13 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             LdK = 0
             LdL = 0
 
-            b_p = np.zeros(self.b_size)  # Variable fields Fields
+            b_t1 = np.zeros(self.b_size)  # Variable fields Fields
 
             # We start in index 1 because we dont have s_{t-1} for t=0
             for t in range(1, T):
 
                 # Compute the derivative of the Likelihood wrt J
-                self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L, b_p))
+                self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L, b_t1))
                 tanh_h = np.tanh(self.b + np.dot(self.J, s[t-1]))
                 sub_s_h = s[t] - tanh_h
                 LdJ += np.einsum('i,j->ij', sub_s_h, s[t-1])
@@ -86,28 +86,40 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 if t == 1:
                     # We need the derivative of b wrt K and L, and that'd require s_{t-2}
                     # Which does not exist at this time step
-                    bdK_p = np.zeros((self.visible_size, self.visible_size))
-                    bdL_p = np.zeros((self.visible_size, self.b_size))
+                    b_t1_dK = np.zeros((self.b_size, self.visible_size, self.visible_size))
+                    b_t1_dL = np.zeros((self.b_size, self.visible_size, self.b_size))
                 else:
-                    sub_b_1_sq = 1 - b_p ** 2
-                    bdK_p = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, bdK_p2))
-                    bdL_p = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, bdL_p2))
+                    for i in range(0, self.b_size):
+                        for n in range(0, self.visible_size):
+                            for m in range(0, self.visible_size):
+                                # sub_b_1_sq = 1 - b_t1 ** 2
+                                b_t1_dK[i, n, m] = (s[t-2][i] + np.dot(self.L[i, :], b_t2_dK[:, n, m])) * \
+                                                   (1 - b_t1[i]**2)
+
+                        for n in range(0, self.visible_size):
+                            for m in range(0, self.b_size):
+                                b_t1_dL[i, n, m] = (b_t2[i] + np.dot(self.L[i, :], b_t2_dL[:, n, m])) * \
+                                                   (1 - b_t1[i] ** 2)
+
+                    # b_t1_dK = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, b_t2_dK))
+                    # b_t1_dL = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, b_t2_dL))
 
                 sub_b_sq = 1 - self.b**2
-                # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, bdK_p))), sub_b_sq)
-                # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, bdK_p))), sub_b_sq)
+                # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, b_t1_dK))), sub_b_sq)
+                # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, b_t1_dK))), sub_b_sq)
                 print(sub_s_h * sub_b_sq)
-                print(bdK_p)
-                print(np.dot(self.L, bdK_p))
+                print(b_t1_dK)
+                print(np.dot(self.L, b_t1_dK))
                 LdK += (sub_s_h * sub_b_sq) # missing terms
 
                 exit()
 
-                LdL += np.dot(np.dot(sub_s_h, (b_p + np.dot(self.L, bdL_p))), sub_b_sq)
+                LdL += np.dot(np.dot(sub_s_h, (b_t1 + np.dot(self.L, b_t1_dL))), sub_b_sq)
 
-                b_p = copy.deepcopy(self.b)
-                bdK_p2 = copy.deepcopy(bdK_p)
-                bdL_p2 = copy.deepcopy(bdL_p)
+                b_t2 = copy.deepcopy(b_t1)
+                b_t1 = copy.deepcopy(self.b)
+                b_t2_dK = copy.deepcopy(b_t1_dK)
+                b_t2_dL = copy.deepcopy(b_t1_dL)
 
             self.J = self.J + eta * LdJ
             self.K = self.K + eta * LdK
