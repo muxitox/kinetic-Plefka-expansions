@@ -67,9 +67,9 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         # Learning loop
         while error > error_lim and rep < max_reps:
             # Initialize the gradients to 0
-            LdJ = 0
-            LdK = 0
-            LdL = 0
+            LdJ = np.zeros((self.visible_size, self.visible_size))
+            LdK = np.zeros((self.visible_size, self.visible_size))
+            LdL = np.zeros((self.visible_size, self.b_size))
 
             b_t1 = np.zeros(self.b_size)  # Variable fields Fields
 
@@ -104,17 +104,26 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                     # b_t1_dK = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, b_t2_dK))
                     # b_t1_dL = np.einsum('i,k->ik', sub_b_1_sq, s[t-2] + np.dot(self.L, b_t2_dL))
 
-                sub_b_sq = 1 - self.b**2
+                # sub_b_sq = 1 - self.b**2
                 # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, b_t1_dK))), sub_b_sq)
                 # LdK += np.dot(np.dot(sub_s_h, (s[t-1] + np.dot(self.L, b_t1_dK))), sub_b_sq)
-                print(sub_s_h * sub_b_sq)
-                print(b_t1_dK)
-                print(np.dot(self.L, b_t1_dK))
-                LdK += (sub_s_h * sub_b_sq) # missing terms
 
-                exit()
+                # LdL += np.dot(np.dot(sub_s_h, (b_t1 + np.dot(self.L, b_t1_dL))), sub_b_sq)
 
-                LdL += np.dot(np.dot(sub_s_h, (b_t1 + np.dot(self.L, b_t1_dL))), sub_b_sq)
+                for i in range(0, self.visible_size):
+
+                    left_product = (s[t][i] - tanh_h[i]) * (1 - self.b[i]**2)
+
+                    for n in range(0, self.visible_size):
+                        for m in range(0, self.visible_size):
+
+                            LdK[n, m] = left_product * \
+                                (s[t-1][m] + np.dot(self.L[i, :], b_t1_dK[:, n, m]))
+
+                    for n in range(0, self.visible_size):
+                        for m in range(0, self.b_size):
+                            LdL[n, m] = left_product * \
+                                (b_t1[m] + np.dot(self.L[i, :], b_t1_dL[:, n, m]))
 
                 b_t2 = copy.deepcopy(b_t1)
                 b_t1 = copy.deepcopy(self.b)
