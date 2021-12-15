@@ -71,16 +71,23 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             LdK = np.zeros((self.visible_size, self.visible_size))
             LdL = np.zeros((self.visible_size, self.b_size))
 
-            b_t1 = np.zeros(self.b_size)  # Variable fields Fields
+            b_t1 = np.zeros(self.visible_size)
 
-            # We start in index 1 because we dont have s_{t-1} for t=0
+            # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
 
+                print('t1', t)
+
+                print(np.dot(self.K, s[t-1]))
+                print(b_t1.shape)
+                print(np.dot(self.L, b_t1))
                 # Compute the derivative of the Likelihood wrt J
                 self.b = np.tanh(np.dot(self.K, s[t-1]) + np.dot(self.L, b_t1))
                 tanh_h = np.tanh(self.b + np.dot(self.J, s[t-1]))
                 sub_s_h = s[t] - tanh_h
                 LdJ += np.einsum('i,j->ij', sub_s_h, s[t-1])
+
+                print(t)
 
                 # Compute the derivatives of the Likelihood wrt L and K
                 if t == 1:
