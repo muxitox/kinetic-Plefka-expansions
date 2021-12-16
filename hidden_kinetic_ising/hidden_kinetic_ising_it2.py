@@ -56,7 +56,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             s.append(self.ising.s[self.visible_idx])
 
         # Initialize variables for learning
-        eta = 0.01
+        eta = 0.001
         rep = 0
         max_reps = 400
         error_lim = 0.0001
@@ -130,8 +130,9 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             self.J = self.J + eta * LdJ
             self.K = self.K + eta * LdK
             self.L = self.L + eta * LdL
+            self.M = self.M + eta * LdM
 
-            error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
+            error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
 
             print(rep)
             print(error)
