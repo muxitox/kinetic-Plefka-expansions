@@ -59,7 +59,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         eta = 0.001
         rep = 0
         max_reps = 400
-        error_lim = 0.0001
+        error_lim = 0.01
         error = np.inf
         # Learning loop
         while error > error_lim and rep < max_reps:
@@ -126,6 +126,12 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 b_t2 = copy.deepcopy(b_t1)
                 b_t2_dK = copy.deepcopy(b_t1_dK)
                 b_t2_dL = copy.deepcopy(b_t1_dL)
+
+            # Normalize the gradients temporally and by the number of spins
+            LdJ /= (self.visible_size * T)
+            LdM /= (self.visible_size * T)
+            LdK /= (self.visible_size * T)
+            LdL /= (self.visible_size * T)
 
             self.J = self.J + eta * LdJ
             self.K = self.K + eta * LdK
