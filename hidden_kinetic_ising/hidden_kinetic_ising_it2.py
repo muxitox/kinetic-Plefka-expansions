@@ -56,9 +56,9 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             s.append(self.ising.s[self.visible_idx])
 
         # Initialize variables for learning
-        eta = 0.1
+        eta = 0.01
         rep = 0
-        max_reps = 200
+        max_reps = 400
         error_lim = 0.0001
         error = np.inf
         # Learning loop
@@ -85,6 +85,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 LdJ += np.einsum('i,j->ij', sub_s_h, s[t - 1])
                 LdM += np.einsum('i,j->ij', sub_s_h, b_t1)
 
+
                 # Compute the derivatives of the b wrt L and K
                 if t == 1:
                     # We need the derivative of b wrt K and L, and that'd require s_{t-2}
@@ -94,7 +95,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 else:
                     for i in range(0, self.b_size):
                         # Derivative of b wrt K
-                        for n in range(0, self.visible_size):
+                        for n in range(0, self.b_size):
                             for m in range(0, self.visible_size):
                                 # sub_b_1_sq = 1 - b_t1 ** 2
                                 b_t1_dK[i, n, m] = (np.dot(self.L[i, :], b_t2_dK[:, n, m])) * \
@@ -102,11 +103,10 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                                 if i == n:
                                     b_t1_dK[i, n, m] += s[t - 2][i]
                         # Derivative of b wrt L
-                        for n in range(0, self.visible_size):
+                        for n in range(0, self.b_size):
                             for m in range(0, self.b_size):
                                 b_t1_dL[i, n, m] = (np.dot(self.L[i, :], b_t2_dL[:, n, m])) * \
                                                    (1 - b_t1[i] ** 2)
-
                                 if i == n:
                                     b_t1_dL[i, n, m] += b_t2[i]
                 # Compute the Jacobians
@@ -121,9 +121,9 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                     for n in range(0, self.b_size):
                         for m in range(0, self.b_size):
                             LdL[n, m] += sub_s_h[i] * \
-                                        (np.dot(self.L[i, :], b_t1_dL[:, n, m]))
+                                        (np.dot(self.M[i, :], b_t1_dL[:, n, m]))
 
-                b_t1 = copy.deepcopy(b_t2)
+                b_t2 = copy.deepcopy(b_t1)
                 b_t2_dK = copy.deepcopy(b_t1_dK)
                 b_t2_dL = copy.deepcopy(b_t1_dL)
 
@@ -133,12 +133,15 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
 
             error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
 
+            print(rep)
+            print(error)
+
             rep = rep + 1
 
 
 if __name__ == "__main__":
     kinetic_ising = ising(netsize=10)
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.7, b_size=1)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.6, b_size=2)
     hidden_ising.random_wiring()
 
     hidden_ising.sim_fit()
