@@ -55,11 +55,12 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             full_s.append(self.ising.s)
             s.append(self.ising.s[self.visible_idx])
 
+
         # Initialize variables for learning
-        eta = 0.001
+        eta = 0.1
         rep = 0
-        max_reps = 400
-        error_lim = 0.01
+        max_reps = 1000
+        error_lim = 0.001
         error = np.inf
         # Learning loop
         while error > error_lim and rep < max_reps:
@@ -82,50 +83,53 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 # Compute the derivative of the Likelihood wrt J
                 tanh_h = np.tanh(np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
                 sub_s_h = s[t] - tanh_h
+
                 LdJ += np.einsum('i,j->ij', sub_s_h, s[t - 1])
-                LdM += np.einsum('i,j->ij', sub_s_h, b_t1)
 
+                # Save computational load if the number of b neurons < 1
+                if self.b_size > 0:
+                    LdM += np.einsum('i,j->ij', sub_s_h, b_t1)
 
-                # Compute the derivatives of the b wrt L and K
-                if t == 1:
-                    # We need the derivative of b wrt K and L, and that'd require s_{t-2}
-                    # Which does not exist at this time step
-                    b_t1_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
-                    b_t1_dL = np.zeros((self.b_size, self.b_size, self.b_size))
-                else:
-                    for i in range(0, self.b_size):
-                        # Derivative of b wrt K
+                    # Compute the derivatives of the b wrt L and K
+                    if t == 1:
+                        # We need the derivative of b wrt K and L, and that'd require s_{t-2}
+                        # Which does not exist at this time step
+                        b_t1_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
+                        b_t1_dL = np.zeros((self.b_size, self.b_size, self.b_size))
+                    else:
+                        for i in range(0, self.b_size):
+                            # Derivative of b wrt K
+                            for n in range(0, self.b_size):
+                                for m in range(0, self.visible_size):
+                                    # sub_b_1_sq = 1 - b_t1 ** 2
+                                    b_t1_dK[i, n, m] = (np.dot(self.L[i, :], b_t2_dK[:, n, m])) * \
+                                                       (1 - b_t1[i] ** 2)
+                                    if i == n:
+                                        b_t1_dK[i, n, m] += s[t - 2][i]
+                            # Derivative of b wrt L
+                            for n in range(0, self.b_size):
+                                for m in range(0, self.b_size):
+                                    b_t1_dL[i, n, m] = (np.dot(self.L[i, :], b_t2_dL[:, n, m])) * \
+                                                       (1 - b_t1[i] ** 2)
+                                    if i == n:
+                                        b_t1_dL[i, n, m] += b_t2[i]
+                    # Compute the Jacobians
+                    for i in range(0, self.visible_size):
+                        # Derivative of Likelihood wrt K
                         for n in range(0, self.b_size):
                             for m in range(0, self.visible_size):
-                                # sub_b_1_sq = 1 - b_t1 ** 2
-                                b_t1_dK[i, n, m] = (np.dot(self.L[i, :], b_t2_dK[:, n, m])) * \
-                                                   (1 - b_t1[i] ** 2)
-                                if i == n:
-                                    b_t1_dK[i, n, m] += s[t - 2][i]
-                        # Derivative of b wrt L
+                                LdK[n, m] += sub_s_h[i] * \
+                                            (np.dot(self.M[i, :], b_t1_dK[:, n, m]))
+
+                        # Derivative of Likelihood wrt L
                         for n in range(0, self.b_size):
                             for m in range(0, self.b_size):
-                                b_t1_dL[i, n, m] = (np.dot(self.L[i, :], b_t2_dL[:, n, m])) * \
-                                                   (1 - b_t1[i] ** 2)
-                                if i == n:
-                                    b_t1_dL[i, n, m] += b_t2[i]
-                # Compute the Jacobians
-                for i in range(0, self.visible_size):
-                    # Derivative of Likelihood wrt K
-                    for n in range(0, self.b_size):
-                        for m in range(0, self.visible_size):
-                            LdK[n, m] += sub_s_h[i] * \
-                                        (np.dot(self.M[i, :], b_t1_dK[:, n, m]))
+                                LdL[n, m] += sub_s_h[i] * \
+                                            (np.dot(self.M[i, :], b_t1_dL[:, n, m]))
 
-                    # Derivative of Likelihood wrt L
-                    for n in range(0, self.b_size):
-                        for m in range(0, self.b_size):
-                            LdL[n, m] += sub_s_h[i] * \
-                                        (np.dot(self.M[i, :], b_t1_dL[:, n, m]))
-
-                b_t2 = copy.deepcopy(b_t1)
-                b_t2_dK = copy.deepcopy(b_t1_dK)
-                b_t2_dL = copy.deepcopy(b_t1_dL)
+                    b_t2 = copy.deepcopy(b_t1)
+                    b_t2_dK = copy.deepcopy(b_t1_dK)
+                    b_t2_dL = copy.deepcopy(b_t1_dL)
 
             # Normalize the gradients temporally and by the number of spins
             LdJ /= (self.visible_size * T)
@@ -138,7 +142,10 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             self.L = self.L + eta * LdL
             self.M = self.M + eta * LdM
 
-            error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
+            if self.b_size > 1:
+                error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
+            else:
+                error = np.max(np.abs(LdJ))
 
             print(rep)
             print(error)
