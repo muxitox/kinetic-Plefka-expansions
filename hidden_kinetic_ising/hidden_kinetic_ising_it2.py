@@ -90,7 +90,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 if self.b_size > 0:
                     LdM += np.einsum('i,j->ij', sub_s_h, b_t1)
 
-                    # Compute the derivatives of the b wrt L and K
+                    # Compute the derivatives of b wrt L and K
                     if t == 1:
                         # We need the derivative of b wrt K and L, and that'd require s_{t-2}
                         # Which does not exist at this time step
@@ -105,14 +105,16 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                                     b_t1_dK[i, n, m] = (np.dot(self.L[i, :], b_t2_dK[:, n, m])) * \
                                                        (1 - b_t1[i] ** 2)
                                     if i == n:
-                                        b_t1_dK[i, n, m] += s[t - 2][i]
+                                        b_t1_dK[i, n, m] += s[t - 2][m]
+
                             # Derivative of b wrt L
                             for n in range(0, self.b_size):
                                 for m in range(0, self.b_size):
                                     b_t1_dL[i, n, m] = (np.dot(self.L[i, :], b_t2_dL[:, n, m])) * \
                                                        (1 - b_t1[i] ** 2)
                                     if i == n:
-                                        b_t1_dL[i, n, m] += b_t2[i]
+                                        b_t1_dL[i, n, m] += b_t2[m]
+
                     # Compute the Jacobians
                     for i in range(0, self.visible_size):
                         # Derivative of Likelihood wrt K
@@ -155,7 +157,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
 
 if __name__ == "__main__":
     kinetic_ising = ising(netsize=10)
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.6, b_size=2)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=1.0, b_size=0)
     hidden_ising.random_wiring()
 
     hidden_ising.sim_fit()
