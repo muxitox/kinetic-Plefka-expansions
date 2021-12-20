@@ -59,7 +59,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         # Initialize variables for learning
         eta = 0.1
         rep = 0
-        max_reps = 1000
+        max_reps = 1500
         error_lim = 0.001
         error = np.inf
         # Learning loop
@@ -78,7 +78,9 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             for t in range(1, T):
 
                 if t != 1:
-                    b_t1 = np.tanh(np.dot(self.K, s[t - 1]) + np.dot(self.L, b_t2))
+                    b_t1 = np.tanh(np.dot(self.K, s[t - 2]) + np.dot(self.L, b_t2))
+
+                    b_t1_aux = np.zeros(self.b_size)
 
                 # Compute the derivative of the Likelihood wrt J
                 tanh_h = np.tanh(np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
@@ -101,19 +103,21 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                             # Derivative of b wrt K
                             for n in range(0, self.b_size):
                                 for m in range(0, self.visible_size):
-                                    # sub_b_1_sq = 1 - b_t1 ** 2
-                                    b_t1_dK[i, n, m] = (np.dot(self.L[i, :], b_t2_dK[:, n, m])) * \
-                                                       (1 - b_t1[i] ** 2)
+                                    b_t1_dK[i, n, m] = (np.dot(self.L[i, :], b_t2_dK[:, n, m]))
                                     if i == n:
                                         b_t1_dK[i, n, m] += s[t - 2][m]
+
+                                    b_t1_dK[i, n, m] *= (1 - b_t1[i] ** 2)
 
                             # Derivative of b wrt L
                             for n in range(0, self.b_size):
                                 for m in range(0, self.b_size):
-                                    b_t1_dL[i, n, m] = (np.dot(self.L[i, :], b_t2_dL[:, n, m])) * \
-                                                       (1 - b_t1[i] ** 2)
+
+                                    b_t1_dL[i, n, m] = (np.dot(self.L[i, :], b_t2_dL[:, n, m]))
                                     if i == n:
                                         b_t1_dL[i, n, m] += b_t2[m]
+
+                                    b_t1_dL[i, n, m] *= (1 - b_t1[i] ** 2)
 
                     # Compute the Jacobians
                     for i in range(0, self.visible_size):
@@ -134,30 +138,34 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                     b_t2_dL = copy.deepcopy(b_t1_dL)
 
             # Normalize the gradients temporally and by the number of spins
-            LdJ /= (self.visible_size * T)
-            LdM /= (self.visible_size * T)
+            LdJ /= T
+            LdM /= T
             LdK /= (self.visible_size * T)
             LdL /= (self.visible_size * T)
 
-            self.J = self.J + eta * LdJ
-            self.K = self.K + eta * LdK
-            self.L = self.L + eta * LdL
-            self.M = self.M + eta * LdM
+            # self.J = self.J + eta * LdJ
+            # self.K = self.K + eta * LdK
+            # self.L = self.L + eta * LdL
+            # self.M = self.M + eta * LdM
+            self.L[1][1] = self.L[1][1] + eta * LdL[1][1]
 
-            if self.b_size > 1:
-                error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
-            else:
-                error = np.max(np.abs(LdJ))
+            # if self.b_size > 1:
+            #     error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
+            # else:
+            #     error = np.max(np.abs(LdJ))
+
 
             print(rep)
-            print(error)
+            # print(error)
+            print('LdL[1][1]', LdL[1][1])
+
 
             rep = rep + 1
 
 
 if __name__ == "__main__":
     kinetic_ising = ising(netsize=10)
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=1.0, b_size=0)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.6, b_size=2)
     hidden_ising.random_wiring()
 
     hidden_ising.sim_fit()
