@@ -80,8 +80,6 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 if t != 1:
                     b_t1 = np.tanh(np.dot(self.K, s[t - 2]) + np.dot(self.L, b_t2))
 
-                    b_t1_aux = np.zeros(self.b_size)
-
                 # Compute the derivative of the Likelihood wrt J
                 tanh_h = np.tanh(np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
                 sub_s_h = s[t] - tanh_h
