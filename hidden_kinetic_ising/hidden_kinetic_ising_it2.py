@@ -71,20 +71,20 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             LdK = np.zeros((self.b_size, self.visible_size))
             LdL = np.zeros((self.b_size, self.b_size))
 
-            # State of b neurons at time [t-2]
+            # State of b neurons at time [t-1]
             b_t1 = np.zeros(self.b_size)
 
-            # In t==1 we need the derivative of b wrt K and L, and that'd require s_{t-2}
-            # Which does not exist at that time step
+            # In t==1 we need the derivative of b wrt K and L at t-1,
+            # and that'd require s_{t-2} which does not exist at that time step
             b_t1_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
             b_t1_dL = np.zeros((self.b_size, self.b_size, self.b_size))
 
+            b_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
+            b_dL = np.zeros((self.b_size, self.b_size, self.b_size))
+
+
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
-
-                # At t==1, b(t-1)=0
-                if t != 1:
-                    b_t1 = np.tanh(np.dot(self.K, s[t - 2]) + np.dot(self.L, b_t2))
 
                 # Compute the derivative of the Likelihood wrt J
                 tanh_h = np.tanh(np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
@@ -96,30 +96,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                 if self.b_size > 0:
                     LdM += np.einsum('i,j->ij', sub_s_h, b_t1)
 
-                    # Compute the derivatives of b wrt L and K
-                    # At t==1 b_t1_dK=0 and b_t1_dL=0
-                    if t != 1:
-                        for i in range(0, self.b_size):
-                            # Derivative of b wrt K
-                            for n in range(0, self.b_size):
-                                for m in range(0, self.visible_size):
-                                    b_t1_dK[i, n, m] = (np.dot(self.L[i, :], b_t2_dK[:, n, m]))
-                                    if i == n:
-                                        b_t1_dK[i, n, m] += s[t - 2][m]
-
-                                    b_t1_dK[i, n, m] *= (1 - b_t1[i] ** 2)
-
-                            # Derivative of b wrt L
-                            for n in range(0, self.b_size):
-                                for m in range(0, self.b_size):
-
-                                    b_t1_dL[i, n, m] = (np.dot(self.L[i, :], b_t2_dL[:, n, m]))
-                                    if i == n:
-                                        b_t1_dL[i, n, m] += b_t2[m]
-
-                                    b_t1_dL[i, n, m] *= (1 - b_t1[i] ** 2)
-
-                    # Compute the Jacobians
+                    # Compute the Jacobians wrt K and L
                     for i in range(0, self.visible_size):
                         # Derivative of Likelihood wrt K
                         for n in range(0, self.b_size):
@@ -133,9 +110,36 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                                 LdL[n, m] += sub_s_h[i] * \
                                             (np.dot(self.M[i, :], b_t1_dL[:, n, m]))
 
-                    b_t2 = copy.deepcopy(b_t1)
-                    b_t2_dK = copy.deepcopy(b_t1_dK)
-                    b_t2_dL = copy.deepcopy(b_t1_dL)
+                    # Compute the necessary information for the next step
+                    # At t==1, b(t-1)=0
+                    b = np.tanh(np.dot(self.K, s[t - 1]) + np.dot(self.L, b_t1))
+
+                    # Compute the derivatives of b wrt L and K
+                    # At t==1 b_t1_dK=0 and b_t1_dL=0
+                    if t != 1:
+                        for i in range(0, self.b_size):
+                            # Derivative of b wrt K
+                            for n in range(0, self.b_size):
+                                for m in range(0, self.visible_size):
+                                    b_dK[i, n, m] = (np.dot(self.L[i, :], b_t1_dK[:, n, m]))
+                                    if i == n:
+                                        b_dK[i, n, m] += s[t - 1][m]
+
+                                    b_dK[i, n, m] *= (1 - b[i] ** 2)
+
+                            # Derivative of b wrt L
+                            for n in range(0, self.b_size):
+                                for m in range(0, self.b_size):
+
+                                    b_dL[i, n, m] = (np.dot(self.L[i, :], b_t1_dL[:, n, m]))
+                                    if i == n:
+                                        b_dL[i, n, m] += b_t1[m]
+
+                                    b_dL[i, n, m] *= (1 - b[i] ** 2)
+
+                    b_t1 = copy.deepcopy(b)
+                    b_t1_dK = copy.deepcopy(b_dK)
+                    b_t1_dL = copy.deepcopy(b_dL)
 
             # Normalize the gradients temporally and by the number of spins in the sum of the Likelihood
             LdJ /= T
