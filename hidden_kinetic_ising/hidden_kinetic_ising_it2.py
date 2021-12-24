@@ -10,26 +10,31 @@ from kinetic_ising import ising
 import copy
 
 
-class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activity
+class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
 
-    def __init__(self, original_ising, visible_units_per, b_size=None, rng=None):  # Create ising model
+    def __init__(self, original_ising, visible_units_per, b_size=0, rng=None):  # Create ising model
+        """
+        Initializes the class for simulation
+
+        :param original_ising: ising model you want to learn from
+        :param visible_units_per: percentage of units that are visible
+        :param b_size: number of b type "hidden" neurons
+        :param rng: random number generator. If not set, one is created.
+        """
 
         self.ising = original_ising
         self.size = self.ising.size
 
         self.visible_size = int(self.size * visible_units_per)  # Network size
         self.hidden_size = self.size - self.visible_size
-
-        if b_size:
-            self.b_size = b_size
-        else:
-            self.b_size = self.hidden_size
+        self.b_size = b_size
 
         # self.H = np.zeros(self.visible_size)  # Fields
         self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
         self.M = np.zeros((self.visible_size, self.b_size))  # Hidden-to-Hidden couplings
         self.K = np.zeros((self.b_size, self.visible_size))  # Hidden-to-Neuron couplings
         self.L = np.zeros((self.b_size, self.b_size))  # Hidden-to-Hidden couplings
+        self.b_0 = np.zeros(self.b_size)
 
         if rng:
             self.rng = rng
@@ -56,7 +61,7 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
     def sim_fit(self):
 
         # Number of time steps in the simulation
-        T = 200
+        T = 100
         # Simulate the full Kinetic Ising model to produce data
         full_s = []
         s = []
@@ -74,16 +79,21 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
         error_lim = 0.001
         error = np.inf
         # Learning loop
-        old_error = np.inf
+        old_error_L = np.inf
+        old_error_b0 = np.inf
+
         while error > error_lim and rep < max_reps:
+            print(rep)
+
             # Initialize the gradients to 0
             LdJ = np.zeros((self.visible_size, self.visible_size))
             LdM = np.zeros((self.visible_size, self.b_size))
             LdK = np.zeros((self.b_size, self.visible_size))
             LdL = np.zeros((self.b_size, self.b_size))
+            Ldb_0 = np.zeros(self.b_size)
 
             # State of b neurons at time [t-1]
-            b_t1 = np.zeros(self.b_size)
+            b_t1 = self.b_0
 
             # In t==1 we need the derivative of b wrt K and L at t-1,
             # and that'd require s_{t-2} which does not exist at that time step
@@ -92,7 +102,6 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
 
             b_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
             b_dL = np.zeros((self.b_size, self.b_size, self.b_size))
-
 
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
@@ -106,9 +115,13 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
 
                 LdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
 
+
                 # Save computational load if the number of b neurons < 1
                 if self.b_size > 0:
                     LdM += np.einsum('i,j->ij', sub_s_tanhh, b_t1)
+
+                    if t == 1:
+                        Ldb_0 = np.dot(sub_s_tanhh, self.M)
 
                     # Compute the Jacobians wrt K and L
                     for i in range(0, self.visible_size):
@@ -116,13 +129,13 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                         for n in range(0, self.b_size):
                             for m in range(0, self.visible_size):
                                 LdK[n, m] += sub_s_tanhh[i] * \
-                                            np.dot(self.M[i, :], b_t1_dK[:, n, m])
+                                             np.dot(self.M[i, :], b_t1_dK[:, n, m])
 
                         # Derivative of Likelihood wrt L
                         for n in range(0, self.b_size):
                             for m in range(0, self.b_size):
                                 LdL[n, m] += sub_s_tanhh[i] * \
-                                            np.dot(self.M[i, :], b_t1_dL[:, n, m])
+                                             np.dot(self.M[i, :], b_t1_dL[:, n, m])
                                 # print('LdL[i,n,m,t]', i, n, m, t, sub_s_tanhh[i] * \
                                 #             np.dot(self.M[i, :], b_t1_dL[:, n, m]))
                                 # print('LdL[n,m] accum',  n, m, t, LdL[n, m])
@@ -161,24 +174,24 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
                     b_t1_dL = copy.deepcopy(b_dL)
 
             # Normalize the gradients temporally and by the number of spins in the sum of the Likelihood
-            LdJ /= (T-1)
-            LdM /= (T-1)
-            LdK /= (self.visible_size * (T-1))
-            LdL /= (self.visible_size * (T-1))
+            LdJ /= T - 1
+            LdM /= T - 1
+            LdK /= self.visible_size * (T - 1)
+            LdL /= self.visible_size * (T - 1)
+            Ldb_0 /= self.visible_size
 
             # self.J = self.J + eta * LdJ
             # self.K = self.K + eta * LdK
             # self.L = self.L + eta * LdL
             # self.M = self.M + eta * LdM
-
-
+            self.b_0 = self.b_0 + 0.01 * Ldb_0
+            print('b0', self.b_0)
 
             # Prints for debugging
             if self.b_size > 1:
                 self.L[1][1] = self.L[1][1] + eta * LdL[1][1]
             else:
                 self.L[0] = self.L[0] + eta * LdL[0]
-
 
             # print('J', self.J)
             # print('M', self.M)
@@ -192,35 +205,40 @@ class HiddenIsing:  # Asymmetric Ising model simulation class with hidden activi
             # else:
             #     error = np.max(np.abs(LdJ))
 
-
-            print(rep)
             # print(error)
-            if self.b_size>1:
+            if self.b_size > 1:
                 print('LdL[1][1]', LdL[1][1])
 
-                if np.abs(LdL[1][1]) - np.abs(old_error) > 0:
+                if np.abs(LdL[1][1]) - np.abs(old_error_L) > 0:
                     print('#################################### WRONG | GRADIENT INCREASING')
                 old_error = LdL[1][1]
 
             else:
                 print('LdL[0]', LdL[0])
+                print('Ldb0', Ldb_0)
 
-                if np.abs(LdL[0]) - np.abs(old_error) > 0:
-                    print('#################################### WRONG | GRADIENT INCREASING')
-                old_error = LdL[0]
+                if np.abs(LdL[0]) - np.abs(old_error_L) > 0:
+                    print('#################################### WRONG | L GRADIENT INCREASING')
+
+                if np.abs(Ldb_0) - np.abs(old_error_b0) > 0:
+                    print('#################################### WRONG | b GRADIENT INCREASING')
+                old_error_L = LdL[0]
+                old_error_b0 = Ldb_0
 
             rep = rep + 1
 
+            print()
+
 
 if __name__ == "__main__":
-
     # You can set up a seed here for reproducibility
+    # Seed to check wrong behavior: 6
     rng = np.random.default_rng()
 
     kinetic_ising = ising(netsize=10, rng=rng)
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.1, b_size=1, rng=rng)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.6, b_size=1, rng=rng)
     hidden_ising.random_wiring()
 
     hidden_ising.sim_fit()

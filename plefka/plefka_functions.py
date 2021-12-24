@@ -5,6 +5,7 @@ GPLv3 2020 Miguel Aguilera
 This code defines functions for applying Plefka expansions for mean field simulations
 """
 import numpy as np
+from utils import *
 
 def TAP_eq(x, H, Vii):
     return np.tanh(H - x * Vii) - x
@@ -277,17 +278,6 @@ def update_C_P2_t_o2(H, J, m, m_p, C_p):
 ################
 
 
-def broadcast_columns(vec, size):
-    '''
-    Creates a matrix where each column is a copy of the vector vec
-    '''
-    return np.einsum('j,k->jk', vec, np.ones(size))
-
-def broadcast_rows(vec, size):
-    """
-    Creates a matrix where each row is a copy of the vector vec
-    """
-    return np.einsum('j,k->kj', vec, np.ones(size))
 
 
 def update_m_P_CMS(H, J, m_p, C_p):
