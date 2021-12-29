@@ -61,7 +61,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
     def sim_fit(self):
 
         # Number of time steps in the simulation
-        T = 100
+        T = 8
         # Simulate the full Kinetic Ising model to produce data
         full_s = []
         s = []
@@ -73,24 +73,35 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         # print('Spins', s)
 
         # Initialize variables for learning
-        eta = 0.1
+        eta = 0.00001
+        eta_b0 = 0.00001
         rep = 0
-        max_reps = 2000
+        max_reps = 4500
         error_lim = 0.001
         error = np.inf
         # Learning loop
         old_error_L = np.inf
         old_error_b0 = np.inf
+        old_error_K = np.inf
+        old_error_M = np.inf
+        old_error_J = np.inf
+
+        old_error = np.inf
+
+        old_logl = -np.inf
 
         while error > error_lim and rep < max_reps:
             print(rep)
 
             # Initialize the gradients to 0
-            LdJ = np.zeros((self.visible_size, self.visible_size))
-            LdM = np.zeros((self.visible_size, self.b_size))
-            LdK = np.zeros((self.b_size, self.visible_size))
-            LdL = np.zeros((self.b_size, self.b_size))
-            Ldb_0 = np.zeros(self.b_size)
+            dLdJ = np.zeros((self.visible_size, self.visible_size))
+            dLdM = np.zeros((self.visible_size, self.b_size))
+            dLdK = np.zeros((self.b_size, self.visible_size))
+            dLdL = np.zeros((self.b_size, self.b_size))
+            dLdb_0 = np.zeros(self.b_size)
+
+            # Likelihood accumulator
+            logl = 0
 
             # State of b neurons at time [t-1]
             b_t1 = self.b_0
@@ -107,39 +118,35 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             for t in range(1, T):
 
                 # Compute the derivative of the Likelihood wrt J
-                tanh_h = np.tanh(np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
+                h = np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1])
+                tanh_h = np.tanh(h)
                 # print('h', np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
                 # print('tanh_h', tanh_h)
                 sub_s_tanhh = s[t] - tanh_h
                 # print('sub_s_tanhh', sub_s_tanhh)
 
-                LdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
+                # Compute the log Likelihood to check
+                logl += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
 
+                # Derivative of the Likelihood wrt J
+                dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
 
                 # Save computational load if the number of b neurons < 1
                 if self.b_size > 0:
-                    LdM += np.einsum('i,j->ij', sub_s_tanhh, b_t1)
+                    dLdM += np.einsum('i,j->ij', sub_s_tanhh, b_t1)
 
                     if t == 1:
-                        Ldb_0 = np.dot(sub_s_tanhh, self.M)
+                        # Compute the gradient of the Likelihood wrt b(0)
+                        dLdb_0 = np.dot(sub_s_tanhh, self.M)
 
                     # Compute the Jacobians wrt K and L
                     for i in range(0, self.visible_size):
-                        # Derivative of Likelihood wrt K
-                        for n in range(0, self.b_size):
-                            for m in range(0, self.visible_size):
-                                LdK[n, m] += sub_s_tanhh[i] * \
-                                             np.dot(self.M[i, :], b_t1_dK[:, n, m])
+                        # Derivative of the Likelihood wrt K
+                        dLdK += sub_s_tanhh[i] * np.einsum('g,gnm->nm', self.M[i, :], b_t1_dK)
 
-                        # Derivative of Likelihood wrt L
-                        for n in range(0, self.b_size):
-                            for m in range(0, self.b_size):
-                                LdL[n, m] += sub_s_tanhh[i] * \
-                                             np.dot(self.M[i, :], b_t1_dL[:, n, m])
-                                # print('LdL[i,n,m,t]', i, n, m, t, sub_s_tanhh[i] * \
-                                #             np.dot(self.M[i, :], b_t1_dL[:, n, m]))
-                                # print('LdL[n,m] accum',  n, m, t, LdL[n, m])
-                                # print('sub_s_tanhh[i]', sub_s_tanhh[i])
+                        # Derivative of the Likelihood wrt L
+                        dLdL += sub_s_tanhh[i] * np.einsum('g,gnm->nm', self.M[i, :], b_t1_dL)
+
 
                     # Compute the necessary information for the next step
                     # At t==1, b(t-1)=0
@@ -150,80 +157,115 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                     # At t==1 b_t1_dK=0 and b_t1_dL=0
                     for i in range(0, self.b_size):
                         # Derivative of b wrt K
-                        for n in range(0, self.b_size):
-                            for m in range(0, self.visible_size):
-                                b_dK[i, n, m] = np.dot(self.L[i, :], b_t1_dK[:, n, m])
-                                if i == n:
-                                    b_dK[i, n, m] += s[t - 1][m]
-
-                                b_dK[i, n, m] *= (1 - b[i] ** 2)
+                        b_dK[i] = np.einsum('g,gnm->nm', self.L[i, :], b_t1_dK)
+                        b_dK[i, i, :] += s[t - 1]
+                        b_dK[i] *= (1 - b[i] ** 2)
 
                         # Derivative of b wrt L
-                        for n in range(0, self.b_size):
-                            for m in range(0, self.b_size):
+                        b_dL[i] = np.einsum('g,gnm->nm', self.L[i, :], b_t1_dL)
+                        b_dL[i, i, :] += b_t1
+                        b_dL[i] *= (1 - b[i] ** 2)
 
-                                b_dL[i, n, m] = np.dot(self.L[i, :], b_t1_dL[:, n, m])
-                                if i == n:
-                                    b_dL[i, n, m] += b_t1[m]
-
-                                b_dL[i, n, m] *= (1 - b[i] ** 2)
-                                # print('b_dL[i,n,m](t)', i, n, m, t, b_dL[i, n, m])
-
+                    # Save the variables for the next step
                     b_t1 = copy.deepcopy(b)
                     b_t1_dK = copy.deepcopy(b_dK)
                     b_t1_dL = copy.deepcopy(b_dL)
 
             # Normalize the gradients temporally and by the number of spins in the sum of the Likelihood
-            LdJ /= T - 1
-            LdM /= T - 1
-            LdK /= self.visible_size * (T - 1)
-            LdL /= self.visible_size * (T - 1)
-            Ldb_0 /= self.visible_size
+            dLdJ /= T - 1
+            dLdM /= T - 1
+            dLdK /= self.visible_size * (T - 1)
+            dLdL /= self.visible_size * (T - 1)
+            dLdb_0 /= self.visible_size
 
-            # self.J = self.J + eta * LdJ
+            # self.J = self.J + eta * dLdJ
             # self.K = self.K + eta * LdK
             # self.L = self.L + eta * LdL
-            # self.M = self.M + eta * LdM
-            self.b_0 = self.b_0 + 0.01 * Ldb_0
-            print('b0', self.b_0)
+            self.M = self.M + eta * dLdM
+            if rep < 100:
+                self.b_0 = self.b_0 + eta_b0 * dLdb_0
+
+            # print('b0', self.b_0)
+            # print('L', self.L)
 
             # Prints for debugging
-            if self.b_size > 1:
-                self.L[1][1] = self.L[1][1] + eta * LdL[1][1]
-            else:
-                self.L[0] = self.L[0] + eta * LdL[0]
+            # if self.b_size > 1:
+            #     self.L[1][1] = self.L[1][1] + eta * LdL[1][1]
+            # else:
+            #     self.L[0] = self.L[0] + eta * LdL[0]
 
             # print('J', self.J)
-            # print('M', self.M)
+            print('M', self.M)
+            print('b0', self.b_0)
             # print('K', self.K)
             # print('L', self.L)
             # print()
 
             # Compute the error as the max component of the gradients
             # if self.b_size > 1:
-            #     error = max(np.max(np.abs(LdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
+            #     error = max(np.max(np.abs(dLdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
+            #
+            #     if np.abs(error) > np.abs(old_error):
+            #         print('#################################### WRONG | GRADIENT INCREASING')
+            #
+            #     old_error = error
             # else:
-            #     error = np.max(np.abs(LdJ))
-
+            #     error = np.max(np.abs(dLdJ))
+            #
+            #     if np.abs(error) > np.abs(old_error):
+            #         print('#################################### WRONG | GRADIENT INCREASING')
+            #
+            #     old_error = error
+            #
             # print(error)
-            if self.b_size > 1:
-                print('LdL[1][1]', LdL[1][1])
 
-                if np.abs(LdL[1][1]) - np.abs(old_error_L) > 0:
-                    print('#################################### WRONG | GRADIENT INCREASING')
-                old_error = LdL[1][1]
+            print('log Likelihood', logl)
+
+            if old_logl > logl:
+                print('#################################### WRONG | LIKELIHOOD DECREASING')
+
+            # print('Comparison', '(logl-old_logl)/eta', (logl-old_logl)/eta, 'dLdM²', old_error_M**2)
+
+            old_logl = logl
+
+
+            if self.b_size > 1:
+                print('LdL[1][1]', dLdL[1][1])
+
+                if np.abs(dLdL[1][1]) - np.abs(old_error_L) > 0:
+                    print('#################################### WRONG | L GRADIENT INCREASING')
+                old_error_L = dLdL[1][1]
 
             else:
-                print('LdL[0]', LdL[0])
-                print('Ldb0', Ldb_0)
+                # print('dLdL[0]', LdL[0])
+                print('dLdM[0]', dLdM[0])
 
-                if np.abs(LdL[0]) - np.abs(old_error_L) > 0:
-                    print('#################################### WRONG | L GRADIENT INCREASING')
+                # print('dLdJ[0]', dLdJ[0])
+                # print('dLdK[0]', LdK[0])
+                print('dLdb0', dLdb_0)
 
-                if np.abs(Ldb_0) - np.abs(old_error_b0) > 0:
+                # if np.abs(LdL[0]) - np.abs(old_error_L) > 0:
+                #     print('#################################### WRONG | L GRADIENT INCREASING')
+
+                if np.abs(dLdM[0]) - np.abs(old_error_M) > 0:
+                    print('#################################### WRONG | M GRADIENT INCREASING')
+                #
+                # if np.abs(dLdJ[0]) - np.abs(old_error_J) > 0:
+                #     print('#################################### WRONG | J GRADIENT INCREASING')
+                #
+                # if np.abs(LdK[0]) - np.abs(old_error_K) > 0:
+                #     print('#################################### WRONG | K GRADIENT INCREASING')
+
+                if np.abs(dLdb_0) - np.abs(old_error_b0) > 0:
                     print('#################################### WRONG | b GRADIENT INCREASING')
-                old_error_L = LdL[0]
-                old_error_b0 = Ldb_0
+                old_error_L = dLdL[0]
+                old_error_b0 = dLdb_0
+                old_error_K = dLdK[0]
+                old_error_M = dLdM[0]
+                old_error_J = dLdJ[0]
+
+
+
 
             rep = rep + 1
 
@@ -233,12 +275,24 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 if __name__ == "__main__":
     # You can set up a seed here for reproducibility
     # Seed to check wrong behavior: 6
-    rng = np.random.default_rng()
+
+    reproducible = True
+    if reproducible:
+        seed = 2425
+    else:
+        seed = np.random.randint(5000, size=1)
+
+    rng = np.random.default_rng(seed)
+
+    print('Seed', seed)
+
 
     kinetic_ising = ising(netsize=10, rng=rng)
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.6, b_size=1, rng=rng)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.3, b_size=2, rng=rng)
     hidden_ising.random_wiring()
 
     hidden_ising.sim_fit()
+
+    print('Seed', seed)
