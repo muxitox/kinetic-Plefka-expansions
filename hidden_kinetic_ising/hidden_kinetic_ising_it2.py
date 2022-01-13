@@ -4,10 +4,12 @@
 This code allows to run simulations of the kinetic Ising model,
 with asymmetric weights and parallel updates.
 """
+import time
 
 import numpy as np
 from kinetic_ising import ising
 import copy
+from utils import *
 
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
@@ -51,6 +53,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.M = self.rng.random((self.visible_size, self.b_size)) / ((self.visible_size + self.b_size) / 2)
         self.K = self.rng.random((self.b_size, self.visible_size)) / ((self.visible_size + self.b_size) / 2)
         self.L = self.rng.random((self.b_size, self.b_size)) / self.b_size
+        self.b_0 = self.rng.random(self.b_size) * 2 - 1
 
         print('J', self.J)
         print('M', self.M)
@@ -61,7 +64,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
     def sim_fit(self):
 
         # Number of time steps in the simulation
-        T = 8
+        T = 100
         # Simulate the full Kinetic Ising model to produce data
         full_s = []
         s = []
@@ -73,11 +76,10 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         # print('Spins', s)
 
         # Initialize variables for learning
-        eta = 0.00001
-        eta_b0 = 0.00001
+        eta = 0.1
         rep = 0
-        max_reps = 4500
-        error_lim = 0.001
+        max_reps = 15000
+        error_lim = 0.0005
         error = np.inf
         # Learning loop
         old_error_L = np.inf
@@ -88,20 +90,19 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         old_error = np.inf
 
-        old_logl = -np.inf
+        log_ell_t1 = -np.inf
 
         while error > error_lim and rep < max_reps:
-            print(rep)
+            print('Iter', rep)
 
             # Initialize the gradients to 0
             dLdJ = np.zeros((self.visible_size, self.visible_size))
             dLdM = np.zeros((self.visible_size, self.b_size))
             dLdK = np.zeros((self.b_size, self.visible_size))
             dLdL = np.zeros((self.b_size, self.b_size))
-            dLdb_0 = np.zeros(self.b_size)
 
             # Likelihood accumulator
-            logl = 0
+            log_ell = 0
 
             # State of b neurons at time [t-1]
             b_t1 = self.b_0
@@ -111,8 +112,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             b_t1_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
             b_t1_dL = np.zeros((self.b_size, self.b_size, self.b_size))
 
-            # b_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
-            # b_dL = np.zeros((self.b_size, self.b_size, self.b_size))
+            # db_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
+            # db_dL = np.zeros((self.b_size, self.b_size, self.b_size))
 
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
@@ -126,7 +127,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 # print('sub_s_tanhh', sub_s_tanhh)
 
                 # Compute the log Likelihood to check
-                logl += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
+                log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
 
                 # Derivative of the Likelihood wrt J
                 dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
@@ -136,8 +137,15 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                     dLdM += np.einsum('i,j->ij', sub_s_tanhh, b_t1)
 
                     if t == 1:
-                        # Compute the gradient of the Likelihood wrt b(0)
+                        # Compute the gradient of the Likelihood wrt b(0) at t==1
                         dLdb_0 = np.dot(sub_s_tanhh, self.M)
+                    if t == 2:
+                        # Compute the gradient of the Likelihood wrt b(0) at t==2
+                        b_t1_sq_rows = broadcast_rows((1 - b_t1**2), self.visible_size)
+                        dLdb_0_2 = np.dot(sub_s_tanhh, np.einsum('ig,gz->iz', (self.M*b_t1_sq_rows), self.L))
+
+                        dLdb_0_2 /= self.b_size  # Normalize also by hidden units size
+                        dLdb_0 += dLdb_0_2
 
                     # Derivative of the Likelihood wrt K
                     dLdK += np.einsum('i,inm->nm', sub_s_tanhh, np.einsum('ig,gnm->inm', self.M, b_t1_dK))
@@ -151,34 +159,34 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                     # At t==1 b_t1_dK=0 and b_t1_dL=0
                     # Derivative of b wrt K
-                    b_dK = np.einsum('ig,gnm->inm', self.L, b_t1_dK)
+                    db_dK = np.einsum('ig,gnm->inm', self.L, b_t1_dK)
                     # Derivative of b wrt L
-                    b_dL = np.einsum('ig,gnm->inm', self.L, b_t1_dL)
+                    db_dL = np.einsum('ig,gnm->inm', self.L, b_t1_dL)
                     for i in range(0, self.b_size):
-                        b_dK[i, i, :] += s[t - 1]
-                        b_dK[i] *= (1 - b[i] ** 2)
+                        db_dK[i, i, :] += s[t - 1]
+                        db_dK[i] *= (1 - b[i] ** 2)
 
-                        b_dL[i, i, :] += b_t1
-                        b_dL[i] *= (1 - b[i] ** 2)
+                        db_dL[i, i, :] += b_t1
+                        db_dL[i] *= (1 - b[i] ** 2)
 
                     # Save the variables for the next step
                     b_t1 = copy.deepcopy(b)
-                    b_t1_dK = copy.deepcopy(b_dK)
-                    b_t1_dL = copy.deepcopy(b_dL)
+                    b_t1_dK = copy.deepcopy(db_dK)
+                    b_t1_dL = copy.deepcopy(db_dL)
 
             # Normalize the gradients temporally and by the number of spins in the sum of the Likelihood
             dLdJ /= T - 1
             dLdM /= T - 1
             dLdK /= self.visible_size * (T - 1)
             dLdL /= self.visible_size * (T - 1)
-            dLdb_0 /= self.visible_size
+            dLdb_0 /= self.visible_size * 2
+            log_ell /= self.visible_size * (T - 1)
 
-            # self.J = self.J + eta * dLdJ
-            # self.K = self.K + eta * LdK
-            # self.L = self.L + eta * LdL
+            self.J = self.J + eta * dLdJ
+            self.K = self.K + eta * dLdK
+            self.L = self.L + eta * dLdL
             self.M = self.M + eta * dLdM
-            if rep < 100:
-                self.b_0 = self.b_0 + eta_b0 * dLdb_0
+            self.b_0 = self.b_0 + eta * dLdb_0
 
             # print('b0', self.b_0)
             # print('L', self.L)
@@ -190,69 +198,74 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             #     self.L[0] = self.L[0] + eta * LdL[0]
 
             # print('J', self.J)
-            print('M', self.M)
-            print('b0', self.b_0)
+            # print('M', self.M)
+            # print('b0', self.b_0)
             # print('K', self.K)
             # print('L', self.L)
             # print()
 
             # Compute the error as the max component of the gradients
-            # if self.b_size > 1:
-            #     error = max(np.max(np.abs(dLdJ)), np.max(np.abs(LdM)), np.max(np.abs(LdK)), np.max(np.abs(LdL)))
-            #
-            #     if np.abs(error) > np.abs(old_error):
-            #         print('#################################### WRONG | GRADIENT INCREASING')
-            #
-            #     old_error = error
-            # else:
-            #     error = np.max(np.abs(dLdJ))
-            #
-            #     if np.abs(error) > np.abs(old_error):
-            #         print('#################################### WRONG | GRADIENT INCREASING')
-            #
-            #     old_error = error
-            #
-            # print(error)
+            if self.b_size > 0:
+                error = max(np.max(np.abs(dLdJ)), np.max(np.abs(dLdM)), np.max(np.abs(dLdK)), np.max(np.abs(dLdL)),
+                            np.max(dLdb_0))
 
-            print('log Likelihood', logl)
+                if np.abs(error) > np.abs(old_error):
+                    print('#################################### WRONG | GRADIENT INCREASING')
 
-            if old_logl > logl:
+                old_error = error
+            else:
+                error = np.max(np.abs(dLdJ))
+
+                if np.abs(error) > np.abs(old_error):
+                    print('#################################### WRONG | GRADIENT INCREASING')
+
+                old_error = error
+
+            print('max_error', error)
+
+            print('log Likelihood', log_ell)
+
+            if log_ell_t1 > log_ell:
                 print('#################################### WRONG | LIKELIHOOD DECREASING')
 
-            # print('Comparison', '(logl-old_logl)/eta', (logl-old_logl)/eta, 'dLdM²', old_error_M**2)
+            # print('Comparison', '(log_ell-log_ell_t1)/eta', (log_ell-log_ell_t1)/eta, 'dLdb_0²', old_error_b0**2)
 
-            old_logl = logl
+            log_ell_t1 = log_ell
 
 
             if self.b_size > 1:
-                print('LdL[1][1]', dLdL[1][1])
-
-                if np.abs(dLdL[1][1]) - np.abs(old_error_L) > 0:
-                    print('#################################### WRONG | L GRADIENT INCREASING')
-                old_error_L = dLdL[1][1]
-
-            else:
-                # print('dLdL[0]', LdL[0])
-                print('dLdM[0]', dLdM[0])
-
-                # print('dLdJ[0]', dLdJ[0])
-                # print('dLdK[0]', LdK[0])
+                print('dLdL', dLdL)
+                print('dLdM', dLdM)
+                print('dLdJ', dLdJ)
+                print('dLdK', dLdK)
                 print('dLdb0', dLdb_0)
 
-                # if np.abs(LdL[0]) - np.abs(old_error_L) > 0:
-                #     print('#################################### WRONG | L GRADIENT INCREASING')
+                # if np.abs(dLdL[1][1]) - np.abs(old_error_L) > 0:
+                #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
+                # old_error_L = dLdL[1][1]
 
-                if np.abs(dLdM[0]) - np.abs(old_error_M) > 0:
-                    print('#################################### WRONG | M GRADIENT INCREASING')
-                #
-                # if np.abs(dLdJ[0]) - np.abs(old_error_J) > 0:
-                #     print('#################################### WRONG | J GRADIENT INCREASING')
-                #
-                # if np.abs(LdK[0]) - np.abs(old_error_K) > 0:
-                #     print('#################################### WRONG | K GRADIENT INCREASING')
+            else:
+                print('dLdL', dLdL)
+                print('dLdM', dLdM)
 
-                if np.abs(dLdb_0) - np.abs(old_error_b0) > 0:
-                    print('#################################### WRONG | b GRADIENT INCREASING')
+                print('dLdJ', dLdJ)
+                print('dLdK', dLdK)
+                print('dLdb0', dLdb_0)
+
+                # if np.abs(LdL[0]) > np.abs(old_error_L) > 0:
+                #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
+
+                # if np.abs(dLdM[0]) > np.abs(old_error_M):
+                #     print('#################################### WRONG | M GRADIENT MAGNITUDE INCREASING')
+                #
+                # if np.abs(dLdJ[0]) > np.abs(old_error_J):
+                #     print('#################################### WRONG | J GRADIENT MAGNITUDE INCREASING')
+                #
+                # if np.abs(LdK[0]) > np.abs(old_error_K):
+                #     print('#################################### WRONG | K GRADIENT MAGNITUDE INCREASING')
+
+                # if np.abs(dLdb_0) > np.abs(old_error_b0):
+                #     print('#################################### WRONG | b GRADIENT MAGNITUDE INCREASING')
                 old_error_L = dLdL[0]
                 old_error_b0 = dLdb_0
                 old_error_K = dLdK[0]
@@ -266,11 +279,12 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
 if __name__ == "__main__":
     # You can set up a seed here for reproducibility
-    # Seed to check wrong behavior: 6, 2425
+    # Seed to check wrong behavior: 6, 2425, 615
+    # 3656, 0.6 1, 2, 3
 
-    reproducible = True
+    reproducible = False
     if reproducible:
-        seed = 2425
+        seed = 3656
     else:
         seed = np.random.randint(5000, size=1)
 
@@ -281,7 +295,7 @@ if __name__ == "__main__":
     kinetic_ising = ising(netsize=10, rng=rng)
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.1, b_size=1, rng=rng)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.6, b_size=2, rng=rng)
     hidden_ising.random_wiring()
 
     hidden_ising.sim_fit()
