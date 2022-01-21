@@ -15,12 +15,12 @@ import matplotlib.pyplot as plt
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
 
-    def __init__(self, original_ising, visible_units_per, b_size=0, rng=None):  # Create ising model
+    def __init__(self, original_ising, visible_size, b_size=0, rng=None):  # Create ising model
         """
         Initializes the class for simulation
 
         :param original_ising: ising model you want to learn from
-        :param visible_units_per: percentage of units that are visible
+        :param visible_size: number of visible unit
         :param b_size: number of b type "hidden" neurons
         :param rng: random number generator. If not set, one is created.
         """
@@ -28,18 +28,17 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.ising = original_ising
         self.size = self.ising.size
 
-        self.visible_size = int(self.size * visible_units_per)      # Network size
+        self.visible_size = visible_size  # Network size
         self.hidden_size = self.size - self.visible_size
         self.b_size = b_size
 
-        self.J = np.zeros((self.visible_size, self.visible_size))   # Spin-to-Spin couplings
-        self.M = np.zeros((self.visible_size, self.b_size))         # Hidden-to-Hidden couplings
-        self.K = np.zeros((self.b_size, self.visible_size))         # Hidden-to-Neuron couplings
-        self.L = np.zeros((self.b_size, self.b_size))               # Hidden-to-Hidden couplings
+        self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
+        self.M = np.zeros((self.visible_size, self.b_size))  # Hidden-to-Hidden couplings
+        self.K = np.zeros((self.b_size, self.visible_size))  # Hidden-to-Neuron couplings
+        self.L = np.zeros((self.b_size, self.b_size))  # Hidden-to-Hidden couplings
         self.b_0 = np.zeros(self.b_size)
 
-        self.Beta = 1                                               # Inverse temperature
-
+        self.Beta = 1  # Inverse temperature
 
         if rng:
             self.rng = rng
@@ -161,9 +160,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         return np.dot(self.M, b_t1) + np.dot(self.J, s_t1)
 
-
-
-    def fit(self, s, eta, max_reps):
+    def fit(self, s, eta, max_reps, T_ori, T_sim):
 
         """
 
@@ -171,10 +168,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :return:
         """
 
-
         # Initialize variables for learning
         rep = 0
-        error_lim = 0.0005
+        error_lim = 0.00005
         error = np.inf
         # Learning loop
         old_error_L = np.inf
@@ -182,17 +178,27 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         old_error_K = np.inf
         old_error_M = np.inf
         old_error_J = np.inf
-        T = len(s)
+        T = T_ori
 
         ell_list = np.zeros(max_reps)
         error_list = np.zeros(max_reps)
+        MSE_m_list = []
+        MSE_C_list = []
+        MSE_D_list = []
+        MSE_m_list2 = []
+        MSE_C_list2 = []
+        MSE_D_list2 = []
+        error_iter_list = []
+
+        plot_interval = 250
 
         old_error = np.inf
 
         log_ell_t1 = -np.inf
 
         while error > error_lim and rep < max_reps:
-            if rep % 100==0:
+
+            if rep % plot_interval == 0:
                 print('Iter', rep)
 
             # Initialize the gradients to 0
@@ -242,8 +248,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                         dLdb_0 = np.dot(sub_s_tanhh, self.M)
                     if t == 2:
                         # Compute the gradient of the Likelihood wrt b(0) at t==2
-                        b_t1_sq_rows = broadcast_rows((1 - b_t1**2), self.visible_size)
-                        dLdb_0_2 = np.dot(sub_s_tanhh, np.einsum('ig,gz->iz', (self.M*b_t1_sq_rows), self.L))
+                        b_t1_sq_rows = broadcast_rows((1 - b_t1 ** 2), self.visible_size)
+                        dLdb_0_2 = np.dot(sub_s_tanhh, np.einsum('ig,gz->iz', (self.M * b_t1_sq_rows), self.L))
 
                         dLdb_0 += dLdb_0_2
 
@@ -284,6 +290,35 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
             error = self.gradient_descent(dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode='regular')
 
+            if rep % plot_interval == 0:
+                sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=100)
+                sim_m, sim_C, sim_D = hidden_ising.compute_moments(sim_s, T_sim)
+
+                MSE_m = np.mean((m - sim_m) ** 2)
+                MSE_C = np.mean((C - sim_C) ** 2)
+                MSE_D = np.mean((D - sim_D) ** 2)
+
+                print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
+                print()
+
+                MSE_m_list.append(MSE_m)
+                MSE_C_list.append(MSE_C)
+                MSE_D_list.append(MSE_D)
+                error_iter_list.append(rep)
+
+                sim_s2 = hidden_ising.simulate_hidden(T_sim, burn_in=100)
+                sim_m2, sim_C2, sim_D2 = hidden_ising.compute_moments(sim_s2, T_sim)
+
+                MSE_m2 = np.mean((m - sim_m2) ** 2)
+                MSE_C2 = np.mean((C - sim_C2) ** 2)
+                MSE_D2 = np.mean((D - sim_D2) ** 2)
+
+                print('2 MSE m', MSE_m2, 'C', MSE_C2, 'D', MSE_D2)
+                print()
+
+                MSE_m_list2.append(MSE_m2)
+                MSE_C_list2.append(MSE_C2)
+                MSE_D_list2.append(MSE_D2)
 
             # print('b0', self.b_0)
             # print('L', self.L)
@@ -321,9 +356,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             #     print('dLdK', dLdK)
             #     print('dLdb0', dLdb_0)
 
-                # if np.abs(dLdL[1][1]) - np.abs(old_error_L) > 0:
-                #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
-                # old_error_L = dLdL[1][1]
+            # if np.abs(dLdL[1][1]) - np.abs(old_error_L) > 0:
+            #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
+            # old_error_L = dLdL[1][1]
 
             # else:
             #     print('dLdL', dLdL)
@@ -333,25 +368,25 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             #     print('dLdK', dLdK)
             #     print('dLdb0', dLdb_0)
 
-                # if np.abs(LdL[0]) > np.abs(old_error_L) > 0:
-                #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
+            # if np.abs(LdL[0]) > np.abs(old_error_L) > 0:
+            #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
 
-                # if np.abs(dLdM[0]) > np.abs(old_error_M):
-                #     print('#################################### WRONG | M GRADIENT MAGNITUDE INCREASING')
-                #
-                # if np.abs(dLdJ[0]) > np.abs(old_error_J):
-                #     print('#################################### WRONG | J GRADIENT MAGNITUDE INCREASING')
-                #
-                # if np.abs(LdK[0]) > np.abs(old_error_K):
-                #     print('#################################### WRONG | K GRADIENT MAGNITUDE INCREASING')
+            # if np.abs(dLdM[0]) > np.abs(old_error_M):
+            #     print('#################################### WRONG | M GRADIENT MAGNITUDE INCREASING')
+            #
+            # if np.abs(dLdJ[0]) > np.abs(old_error_J):
+            #     print('#################################### WRONG | J GRADIENT MAGNITUDE INCREASING')
+            #
+            # if np.abs(LdK[0]) > np.abs(old_error_K):
+            #     print('#################################### WRONG | K GRADIENT MAGNITUDE INCREASING')
 
-                # if np.abs(dLdb_0) > np.abs(old_error_b0):
-                #     print('#################################### WRONG | b GRADIENT MAGNITUDE INCREASING')
-                # old_error_L = dLdL[0]
-                # old_error_b0 = dLdb_0
-                # old_error_K = dLdK[0]
-                # old_error_M = dLdM[0]
-                # old_error_J = dLdJ[0]
+            # if np.abs(dLdb_0) > np.abs(old_error_b0):
+            #     print('#################################### WRONG | b GRADIENT MAGNITUDE INCREASING')
+            # old_error_L = dLdL[0]
+            # old_error_b0 = dLdb_0
+            # old_error_K = dLdK[0]
+            # old_error_M = dLdM[0]
+            # old_error_J = dLdJ[0]
 
             rep = rep + 1
 
@@ -364,60 +399,65 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('dLdK', dLdK)
         print('dLdb0', dLdb_0)
 
-        return rep, ell_list, error_list
+        return rep, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list, MSE_m_list2, MSE_C_list2, MSE_D_list2
 
 
-    def simulate_full(self, T):
+    def simulate_full(self, T, burn_in=0):
         """
         Simulate the full Kinetic Ising model to produce data
 
         :param T: number of steps to simulate
+        :param burn_in:
         :return:
         """
         full_s = []
         s = []
-        for t in range(0, T):
+        for t in range(0, T + burn_in):
             self.ising.ParallelUpdate()
             full_s.append(self.ising.s)
-            s.append(self.ising.s[self.visible_idx])
+            if t >= burn_in:
+                s.append(self.ising.s[self.visible_idx])
         # print('Spins', s)
         return full_s, s
 
     # Update the state of the network using Little parallel update rule
-    def parallel_update(self, sim_s, b_t1):
+    def parallel_update(self, sim_s_t1, b_t1):
 
-        h = self.compute_h(sim_s, b_t1)
+        h = self.compute_h(sim_s_t1, b_t1)
         r = self.rng.random(self.visible_size)
-        sim_s = -1 + 2 * (2 * self.Beta * h > -
+        sim_s_t1 = -1 + 2 * (2 * self.Beta * h > -
         np.log(1 / r - 1)).astype(int)
 
-        return sim_s
+        print(sim_s_t1)
 
-    def simulate_hidden(self, T):
+        return sim_s_t1
+
+    def simulate_hidden(self, T, burn_in=0):
         # Initialize all visible neurons to -1
         sim_s = np.ones(self.visible_size) * -1
         sim_s_list = []
         b_t1 = self.b_0
 
-        for t in range(0, T):
+        for t in range(0, T + burn_in):
 
             b = self.compute_b(sim_s, b_t1)
 
             sim_s = self.parallel_update(sim_s, b_t1)
-            sim_s_list.append(sim_s)
+            if t >= burn_in:
+                sim_s_list.append(sim_s)
 
             b_t1 = copy.deepcopy(b)
 
         return sim_s_list
 
     @staticmethod
-    def compute_moments(s_list):
+    def compute_moments(s_list, T_ori):
         X = np.array(s_list).T
         m = X.mean(axis=1)
-        C = X.dot(X.T) / T
+        C = X.dot(X.T) / T_ori
         C -= np.einsum('i,k->ik', m, m, optimize=True)
         d = 1
-        D = X[:, 0:-d].dot(X[:, d:].T) / T
+        D = X[:, 0:-d].dot(X[:, d:].T) / T_ori
         D -= np.einsum('i,k->ik', m, m, optimize=True)
 
         return m, C, D
@@ -438,40 +478,112 @@ if __name__ == "__main__":
 
     print('Seed', seed)
 
+    original_netize = 6
     kinetic_ising = ising(netsize=10, rng=rng)
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
-    vis_per = 0.6
-    b_size = 3
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=vis_per, b_size=b_size, rng=rng)
+    vis_units = 4
+    b_size = 1
+    hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, b_size=b_size, rng=rng)
     hidden_ising.random_wiring()
 
-    T = 100
+    T_ori = 500
+    T_sim = 2000
     eta = 0.01
-    max_reps = 60000
-    full_s, visible_s = hidden_ising.simulate_full(T)
-    m, C, D = hidden_ising.compute_moments(visible_s)
-    num_reps, ell_list, error_list = hidden_ising.fit(visible_s, eta, max_reps)
+    max_reps = 6500
+    full_s, visible_s = hidden_ising.simulate_full(T_ori, burn_in=100)
+    m, C, D = hidden_ising.compute_moments(visible_s, T_ori)
 
-    plt.plot(ell_list[0:num_reps], label='log(ell)')
-    plt.plot(error_list[0:num_reps], label='max_grad')
-    plt.plot(np.square(error_list[0:num_reps]), label='sq_max_grad')
-    plt.plot(np.diff(ell_list[0:num_reps]/eta), '--', label='np.diff(log_ell)/eta')
+    _, visible_s1 = hidden_ising.simulate_full(T_ori, burn_in=100)
+    m1, C1, D1 = hidden_ising.compute_moments(visible_s1, T_ori)
 
-    plt.xlabel('iters')
-    title_str = f'Seed: {seed}. Vis_units: {vis_per}. b_size: {b_size} Simulation steps: {T}. eta: {eta}.'
-    plt.title(title_str)
-    plt.legend()
-    plt.show()
+    num_reps, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list, MSE_m_list2, MSE_C_list2, MSE_D_list2 = \
+        hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim)
 
-    sim_s = hidden_ising.simulate_hidden(T)
-    sim_m, sim_C, sim_D = hidden_ising.compute_moments(sim_s)
-
+    title_str = f'Seed: {seed}. Vis_units: {vis_units}. b_size: {b_size} Or Simulation steps: {T_ori}. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps}'
     print(title_str)
-    print('Error m', m - sim_m)
+
+    print('Comparison between full models to observe the error in the simulation')
+    print('m', m)
+    print('m1', m1)
     print()
-    print('Error C', C - sim_C)
+    print('C', C)
+    print('C1', C1)
     print()
-    print('Error D',  D - sim_D)
+    print('D', D)
+    print('D1', D1)
+
+    MSE_m = np.mean((m - m1) ** 2)
+    MSE_C = np.mean((C - C1) ** 2)
+    MSE_D = np.mean((D - D1) ** 2)
+
+    print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
+
+    print()
+
+    sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=100)
+    f_sim_m, f_sim_C, f_sim_D = hidden_ising.compute_moments(sim_s, T_sim)
+
+    print('####')
+    print('First simulation')
+    print('Final Error m', m - f_sim_m)
+    print()
+    print('Final Error C', C - f_sim_C)
+    print()
+    print('Final Error D', D - f_sim_D)
+
+    f_MSE_m = np.mean((m - f_sim_m) ** 2)
+    f_MSE_C = np.mean((C - f_sim_C) ** 2)
+    f_MSE_D = np.mean((D - f_sim_D) ** 2)
+
+    MSE_m_list.append(f_MSE_m)
+    MSE_C_list.append(f_MSE_C)
+    MSE_D_list.append(f_MSE_D)
+
+    print('Final MSE m', f_MSE_m, 'C', f_MSE_C, 'D', f_MSE_D)
+
+    sim_s2 = hidden_ising.simulate_hidden(T_sim, burn_in=100)
+    f_sim_m2, f_sim_C2, f_sim_D2 = hidden_ising.compute_moments(sim_s2, T_sim)
+
+    print()
+    print('####')
+    print('Second simulation')
+    print('Final Error m', m - f_sim_m2)
+    print()
+    print('Final Error C', C - f_sim_C2)
+    print()
+    print('Final Error D', D - f_sim_D2)
+
+    f_MSE_m2 = np.mean((m - f_sim_m2) ** 2)
+    f_MSE_C2 = np.mean((C - f_sim_C2) ** 2)
+    f_MSE_D2 = np.mean((D - f_sim_D2) ** 2)
+
+    MSE_m_list2.append(f_MSE_m2)
+    MSE_C_list2.append(f_MSE_C2)
+    MSE_D_list2.append(f_MSE_D2)
+
+    print('Final MSE m', f_MSE_m2, 'C', f_MSE_C2, 'D', f_MSE_D2)
+
+    fig, ax = plt.subplots(2)
+    ax[0].plot(ell_list[0:num_reps], label='log(ell)')
+    ax[0].plot(error_list[0:num_reps], label='max_grad')
+    ax[0].plot(np.square(error_list[0:num_reps]), label='sq_max_grad')
+    ax[0].plot(np.diff(ell_list[0:num_reps] / eta), '--', label='np.diff(log_ell)/eta')
+    ax[0].set_xlabel('iters')
+    ax[0].legend()
+
+    error_iter_list.append(max_reps)
+
+    ax[1].plot(error_iter_list, MSE_m_list, label='MSE m')
+    ax[1].plot(error_iter_list, MSE_C_list, label='MSE C')
+    ax[1].plot(error_iter_list, MSE_D_list, label='MSE D')
+    ax[1].plot(error_iter_list, MSE_m_list2, '--', label='MSE m 2')
+    ax[1].plot(error_iter_list, MSE_C_list2, '--', label='MSE C 2')
+    ax[1].plot(error_iter_list, MSE_D_list2, '--', label='MSE D 2')
+    ax[1].set_xlabel('iters')
+    ax[1].legend()
+
+    fig.suptitle(title_str)
+    plt.show()
 
     print('Seed', seed)
