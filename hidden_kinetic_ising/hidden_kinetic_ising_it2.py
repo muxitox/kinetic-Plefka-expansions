@@ -52,7 +52,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         # visible_units[hidden_idx] = 0
 
     def random_wiring(self):  # Set random values for J
-        self.H = self.rng.random(np.zeros(self.visible_size))/self.visible_size
+        self.H = self.rng.random(self.visible_size) / self.visible_size
         self.J = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.M = self.rng.random((self.visible_size, self.b_size)) / ((self.visible_size + self.b_size) / 2)
         self.K = self.rng.random((self.b_size, self.visible_size)) / ((self.visible_size + self.b_size) / 2)
@@ -90,8 +90,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             error = np.max(np.abs(dLdJ))
 
             self.J = self.J + eta * dLdJ
-            self.H = self.H + eta * dLdJ
-
+            self.H = self.H + eta * dLdH
 
         return error
 
@@ -109,7 +108,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         max_b0_idx = np.argmax(np.abs(dLdb_0))
         max_b0_idx = np.unravel_index(max_b0_idx, dLdb_0.shape)
 
-        max_H = dLdJ[max_H_idx]
+        max_H = dLdH[max_H_idx]
         max_J = dLdJ[max_J_idx]
         max_M = dLdM[max_M_idx]
         max_K = dLdK[max_K_idx]
@@ -174,7 +173,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         return self.H + np.dot(self.M, b_t1) + np.dot(self.J, s_t1)
 
-    def fit(self, s, eta, max_reps, T_ori, T_sim):
+    def fit(self, s, eta, max_reps, T_ori, T_sim, gradient_mode='regular'):
 
         """
 
@@ -216,7 +215,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 print('Iter', rep)
 
             # Initialize the gradients to 0
-            dLdH= np.zeros(self.visible_size)
+            dLdH = np.zeros(self.visible_size)
             dLdJ = np.zeros((self.visible_size, self.visible_size))
             dLdM = np.zeros((self.visible_size, self.b_size))
             dLdK = np.zeros((self.b_size, self.visible_size))
@@ -252,7 +251,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
 
                 # Derivative of the Likelihood wrt H
-                dLdH += s[t] + tanh_h
+                dLdH += sub_s_tanhh
 
                 # Derivative of the Likelihood wrt J
                 dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
@@ -307,7 +306,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             dLdb_0 /= self.visible_size * (T - 1)
             log_ell /= self.visible_size * (T - 1)
 
-            error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode='regular')
+            error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode=gradient_mode)
 
             if rep % plot_interval == 0:
                 sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=100)
@@ -411,6 +410,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
             # print()
 
+        print('dLdH', dLdH)
         print('dLdL', dLdL)
         print('dLdM', dLdM)
 
@@ -419,7 +419,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('dLdb0', dLdb_0)
 
         return rep, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list, MSE_m_list2, MSE_C_list2, MSE_D_list2
-
 
     def simulate_full(self, T, burn_in=0):
         """
@@ -440,14 +439,11 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         return full_s, s
 
     # Update the state of the network using Little parallel update rule
-    def parallel_update(self, sim_s_t1, b_t1):
+    def hidden_parallel_update(self, sim_s_t1, b_t1):
 
         h = self.compute_h(sim_s_t1, b_t1)
         r = self.rng.random(self.visible_size)
-        sim_s_t1 = -1 + 2 * (2 * self.Beta * h > -
-        np.log(1 / r - 1)).astype(int)
-
-        print(sim_s_t1)
+        sim_s_t1 = -1 + 2 * (2 * self.Beta * h > - np.log(1 / r - 1)).astype(int)
 
         return sim_s_t1
 
@@ -460,8 +456,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         for t in range(0, T + burn_in):
 
             b = self.compute_b(sim_s, b_t1)
-
-            sim_s = self.parallel_update(sim_s, b_t1)
+            sim_s = self.hidden_parallel_update(sim_s, b_t1)
             if t >= burn_in:
                 sim_s_list.append(sim_s)
 
@@ -502,7 +497,7 @@ if __name__ == "__main__":
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
     vis_units = 4
-    b_size = 1
+    b_size = 0
     hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, b_size=b_size, rng=rng)
     hidden_ising.random_wiring()
 
@@ -516,8 +511,9 @@ if __name__ == "__main__":
     _, visible_s1 = hidden_ising.simulate_full(T_ori, burn_in=100)
     m1, C1, D1 = hidden_ising.compute_moments(visible_s1, T_ori)
 
+    gradient_mode = 'regular'
     num_reps, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list, MSE_m_list2, MSE_C_list2, MSE_D_list2 = \
-        hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim)
+        hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim, gradient_mode=gradient_mode)
 
     title_str = f'Seed: {seed}. Vis_units: {vis_units}. b_size: {b_size} Or Simulation steps: {T_ori}. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps}'
     print(title_str)
