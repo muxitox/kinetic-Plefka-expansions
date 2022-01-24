@@ -32,6 +32,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.hidden_size = self.size - self.visible_size
         self.b_size = b_size
 
+        self.H = np.zeros(self.visible_size)  # External fields
         self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
         self.M = np.zeros((self.visible_size, self.b_size))  # Hidden-to-Hidden couplings
         self.K = np.zeros((self.b_size, self.visible_size))  # Hidden-to-Neuron couplings
@@ -51,6 +52,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         # visible_units[hidden_idx] = 0
 
     def random_wiring(self):  # Set random values for J
+        self.H = self.rng.random(np.zeros(self.visible_size))/self.visible_size
         self.J = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.M = self.rng.random((self.visible_size, self.b_size)) / ((self.visible_size + self.b_size) / 2)
         self.K = self.rng.random((self.b_size, self.visible_size)) / ((self.visible_size + self.b_size) / 2)
@@ -63,22 +65,22 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('L', self.L)
         print()
 
-    def gradient_descent(self, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode='regular'):
+    def gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode='regular'):
 
         if mode == 'regular':
-            error = self.regular_gradient_descent(dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta)
+            error = self.regular_gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta)
         elif mode == 'coordinated':
-            error = self.coordinated_gradient_descent(dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta)
+            error = self.coordinated_gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta)
 
         return error
 
-    def regular_gradient_descent(self, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta):
+    def regular_gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta):
 
         if b_size > 0:
 
-            error = max(np.max(np.abs(dLdJ)), np.max(np.abs(dLdM)), np.max(np.abs(dLdK)), np.max(np.abs(dLdL)),
-                        np.max(dLdb_0))
-
+            error = max(np.max(np.abs(dLdH)), np.max(np.abs(dLdJ)), np.max(np.abs(dLdM)), np.max(np.abs(dLdK)),
+                        np.max(np.abs(dLdL)), np.max(dLdb_0))
+            self.H = self.H + eta * dLdH
             self.J = self.J + eta * dLdJ
             self.M = self.M + eta * dLdM
             self.K = self.K + eta * dLdK
@@ -88,35 +90,44 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             error = np.max(np.abs(dLdJ))
 
             self.J = self.J + eta * dLdJ
+            self.H = self.H + eta * dLdJ
+
 
         return error
 
-    def coordinated_gradient_descent(self, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta):
+    def coordinated_gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta):
+
+        max_H_idx = np.argmax(np.abs(dLdH))
+        max_J_idx = np.argmax(np.abs(dLdJ))
+        max_J_idx = np.unravel_index(max_J_idx, dLdJ.shape)
+        max_M_idx = np.argmax(np.abs(dLdM))
+        max_M_idx = np.unravel_index(max_M_idx, dLdM.shape)
+        max_K_idx = np.argmax(np.abs(dLdK))
+        max_K_idx = np.unravel_index(max_K_idx, dLdK.shape)
+        max_L_idx = np.argmax(np.abs(dLdL))
+        max_L_idx = np.unravel_index(max_L_idx, dLdL.shape)
+        max_b0_idx = np.argmax(np.abs(dLdb_0))
+        max_b0_idx = np.unravel_index(max_b0_idx, dLdb_0.shape)
+
+        max_H = dLdJ[max_H_idx]
+        max_J = dLdJ[max_J_idx]
+        max_M = dLdM[max_M_idx]
+        max_K = dLdK[max_K_idx]
+        max_L = dLdL[max_L_idx]
+        max_b0 = dLdb_0[max_b0_idx]
 
         if self.b_size > 0:
-            max_J_idx = np.argmax(np.abs(dLdJ))
-            max_J_idx = np.unravel_index(max_J_idx, dLdJ.shape)
-            max_M_idx = np.argmax(np.abs(dLdM))
-            max_M_idx = np.unravel_index(max_M_idx, dLdM.shape)
-            max_K_idx = np.argmax(np.abs(dLdK))
-            max_K_idx = np.unravel_index(max_K_idx, dLdK.shape)
-            max_L_idx = np.argmax(np.abs(dLdL))
-            max_L_idx = np.unravel_index(max_L_idx, dLdL.shape)
-            max_b0_idx = np.argmax(np.abs(dLdb_0))
-            max_b0_idx = np.unravel_index(max_b0_idx, dLdb_0.shape)
 
-            max_J = dLdJ[max_J_idx]
-            max_M = dLdM[max_M_idx]
-            max_K = dLdK[max_K_idx]
-            max_L = dLdL[max_L_idx]
-            max_b0 = dLdb_0[max_b0_idx]
-
-            max_max = np.argmax(np.abs([max_J, max_M, max_K, max_L, max_b0]))
+            max_max = np.argmax(np.abs([max_H, max_J, max_M, max_K, max_L, max_b0]))
             if max_max == 0:
+                self.H[max_H_idx] = self.H[max_H_idx] + eta * max_H
+                error = np.abs(max_H)
+
+            if max_max == 1:
                 self.J[max_J_idx] = self.J[max_J_idx] + eta * max_J
                 error = np.abs(max_J)
 
-            elif max_max == 1:
+            elif max_max == 2:
                 self.M[max_M_idx] = self.M[max_M_idx] + eta * max_M
                 error = np.abs(max_M)
 
@@ -124,20 +135,23 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 self.K[max_K_idx] = self.K[max_K_idx] + eta * max_K
                 error = np.abs(max_K)
 
-            elif max_max == 3:
+            elif max_max == 4:
                 self.L[max_L_idx] = self.L[max_L_idx] + eta * max_L
                 error = np.abs(max_L)
 
-
-            elif max_max == 4:
+            elif max_max == 5:
                 self.b_0[max_b0_idx] = self.b_0[max_b0_idx] + eta * max_b0
                 error = np.abs(max_b0)
 
         else:
-            max_J_idx = np.argmax(np.abs(dLdJ))
-            max_J_idx = np.unravel_index(max_J_idx, dLdJ.shape)
-            self.J[max_J_idx] = self.J[max_J_idx] + eta * dLdJ[max_J_idx]
-            error = np.abs(dLdJ[max_J_idx])
+            max_max = np.argmax(np.abs([max_H, max_J]))
+            if max_max == 0:
+                self.H[max_H_idx] = self.H[max_H_idx] + eta * max_H
+                error = np.abs(max_H)
+
+            if max_max == 1:
+                self.J[max_J_idx] = self.J[max_J_idx] + eta * max_J
+                error = np.abs(max_J)
 
         return error
 
@@ -158,7 +172,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :return: effective field at time t
         """
 
-        return np.dot(self.M, b_t1) + np.dot(self.J, s_t1)
+        return self.H + np.dot(self.M, b_t1) + np.dot(self.J, s_t1)
 
     def fit(self, s, eta, max_reps, T_ori, T_sim):
 
@@ -202,6 +216,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 print('Iter', rep)
 
             # Initialize the gradients to 0
+            dLdH= np.zeros(self.visible_size)
             dLdJ = np.zeros((self.visible_size, self.visible_size))
             dLdM = np.zeros((self.visible_size, self.b_size))
             dLdK = np.zeros((self.b_size, self.visible_size))
@@ -235,6 +250,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # Compute the log Likelihood to check
                 log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
+
+                # Derivative of the Likelihood wrt H
+                dLdH += s[t] + tanh_h
 
                 # Derivative of the Likelihood wrt J
                 dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
@@ -281,6 +299,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                     b_t1_dL = copy.deepcopy(db_dL)
 
             # Normalize the gradients temporally and by the number of spins in the sum of the Likelihood
+            dLdH /= self.visible_size * (T - 1)
             dLdJ /= self.visible_size * (T - 1)
             dLdM /= self.visible_size * (T - 1)
             dLdK /= self.visible_size * (T - 1)
@@ -288,7 +307,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             dLdb_0 /= self.visible_size * (T - 1)
             log_ell /= self.visible_size * (T - 1)
 
-            error = self.gradient_descent(dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode='regular')
+            error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode='regular')
 
             if rep % plot_interval == 0:
                 sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=100)
