@@ -11,11 +11,12 @@ from kinetic_ising import ising
 import copy
 from utils import *
 import matplotlib.pyplot as plt
+import os
 
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
 
-    def __init__(self, original_ising, visible_size, b_size=0, rng=None):  # Create ising model
+    def __init__(self, original_ising, visible_size, rng=None):  # Create ising model
         """
         Initializes the class for simulation
 
@@ -28,7 +29,19 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.ising = original_ising
         self.size = self.ising.size
 
+        self.Beta = 1  # Inverse temperature
+
+        if rng:
+            self.rng = rng
+        else:
+            self.rng = np.random.default_rng()
+
         self.visible_size = visible_size  # Network size
+
+        self.visible_idx = self.rng.choice(range(0, self.ising.size), self.visible_size)
+
+    def set_hidden_size(self, b_size=0):
+
         self.hidden_size = self.size - self.visible_size
         self.b_size = b_size
 
@@ -39,17 +52,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.L = np.zeros((self.b_size, self.b_size))  # Hidden-to-Hidden couplings
         self.b_0 = np.zeros(self.b_size)
 
-        self.Beta = 1  # Inverse temperature
-
-        if rng:
-            self.rng = rng
-        else:
-            self.rng = np.random.default_rng()
-
-        # visible_units = np.ones(self.size)
-        # self.hidden_idx = random.sample(range(0, self.ising.size), self.hidden_size)
         self.visible_idx = self.rng.choice(range(0, self.ising.size), self.visible_size)
-        # visible_units[hidden_idx] = 0
+
 
     def random_wiring(self):  # Set random values for J
         self.H = self.rng.random(self.visible_size) / self.visible_size
@@ -178,19 +182,19 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         """
 
         :param s: evolution of the system trough T steps
+        :param eta:
+        :param max_reps:
+        :param T_ori:
+        :param T_sim:
+        :param gradient_mode: type of gradient descent to perform. Can be either 'regular' or 'coordinated'
         :return:
         """
 
         # Initialize variables for learning
         rep = 0
-        error_lim = 0.00005
+        error_lim = 0.000005
         error = np.inf
         # Learning loop
-        old_error_L = np.inf
-        old_error_b0 = np.inf
-        old_error_K = np.inf
-        old_error_M = np.inf
-        old_error_J = np.inf
         T = T_ori
 
         ell_list = np.zeros(max_reps)
@@ -211,8 +215,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         while error > error_lim and rep < max_reps:
 
-            if rep % plot_interval == 0:
-                print('Iter', rep)
+            # if rep % plot_interval == 0:
+            #     print('Iter', rep)
 
             # Initialize the gradients to 0
             dLdH = np.zeros(self.visible_size)
@@ -233,19 +237,13 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             b_t1_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
             b_t1_dL = np.zeros((self.b_size, self.b_size, self.b_size))
 
-            # db_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
-            # db_dL = np.zeros((self.b_size, self.b_size, self.b_size))
-
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
 
-                # Compute the derivative of the Likelihood wrt J
+                # Compute the effective field of every neuron
                 h = self.compute_h(s[t - 1], b_t1)
                 tanh_h = np.tanh(h)
-                # print('h', np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
-                # print('tanh_h', tanh_h)
                 sub_s_tanhh = s[t] - tanh_h
-                # print('sub_s_tanhh', sub_s_tanhh)
 
                 # Compute the log Likelihood to check
                 log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
@@ -278,7 +276,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                     # Compute the necessary information for the next step
                     # At t==1, b(t-1)=0
                     b = self.compute_b(s[t - 1], b_t1)
-                    # print('b', b)
 
                     # At t==1 b_t1_dK=0 and b_t1_dL=0
                     # Derivative of b wrt K
@@ -316,48 +313,15 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 MSE_C = np.mean((C - sim_C) ** 2)
                 MSE_D = np.mean((D - sim_D) ** 2)
 
-                print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
-                print()
+                # print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
+                # print()
 
                 MSE_m_list.append(MSE_m)
                 MSE_C_list.append(MSE_C)
                 MSE_D_list.append(MSE_D)
                 error_iter_list.append(rep)
 
-                sim_s2 = hidden_ising.simulate_hidden(T_sim, burn_in=100)
-                sim_m2, sim_C2, sim_D2 = hidden_ising.compute_moments(sim_s2, T_sim)
-
-                MSE_m2 = np.mean((m - sim_m2) ** 2)
-                MSE_C2 = np.mean((C - sim_C2) ** 2)
-                MSE_D2 = np.mean((D - sim_D2) ** 2)
-
-                print('2 MSE m', MSE_m2, 'C', MSE_C2, 'D', MSE_D2)
-                print()
-
-                MSE_m_list2.append(MSE_m2)
-                MSE_C_list2.append(MSE_C2)
-                MSE_D_list2.append(MSE_D2)
-
-            # print('b0', self.b_0)
-            # print('L', self.L)
-
-            # Prints for debugging
-            # if self.b_size > 1:
-            #     self.L[1][1] = self.L[1][1] + eta * LdL[1][1]
-            # else:
-            #     self.L[0] = self.L[0] + eta * LdL[0]
-
-            # print('J', self.J)
-            # print('M', self.M)
-            # print('b0', self.b_0)
-            # print('K', self.K)
-            # print('L', self.L)
-            # print()
-
             error_list[rep] = error
-            # print('max_error', error)
-
-            # print('log Likelihood', log_ell)
 
             if log_ell_t1 > log_ell:
                 print('#################################### WRONG | LIKELIHOOD DECREASING')
@@ -366,45 +330,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
             ell_list[rep] = log_ell
             log_ell_t1 = log_ell
-
-            # if self.b_size > 1:
-            #     print('dLdL', dLdL)
-            #     print('dLdM', dLdM)
-            #     print('dLdJ', dLdJ)
-            #     print('dLdK', dLdK)
-            #     print('dLdb0', dLdb_0)
-
-            # if np.abs(dLdL[1][1]) - np.abs(old_error_L) > 0:
-            #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
-            # old_error_L = dLdL[1][1]
-
-            # else:
-            #     print('dLdL', dLdL)
-            #     print('dLdM', dLdM)
-            #
-            #     print('dLdJ', dLdJ)
-            #     print('dLdK', dLdK)
-            #     print('dLdb0', dLdb_0)
-
-            # if np.abs(LdL[0]) > np.abs(old_error_L) > 0:
-            #     print('#################################### WRONG | L GRADIENT MAGNITUDE INCREASING')
-
-            # if np.abs(dLdM[0]) > np.abs(old_error_M):
-            #     print('#################################### WRONG | M GRADIENT MAGNITUDE INCREASING')
-            #
-            # if np.abs(dLdJ[0]) > np.abs(old_error_J):
-            #     print('#################################### WRONG | J GRADIENT MAGNITUDE INCREASING')
-            #
-            # if np.abs(LdK[0]) > np.abs(old_error_K):
-            #     print('#################################### WRONG | K GRADIENT MAGNITUDE INCREASING')
-
-            # if np.abs(dLdb_0) > np.abs(old_error_b0):
-            #     print('#################################### WRONG | b GRADIENT MAGNITUDE INCREASING')
-            # old_error_L = dLdL[0]
-            # old_error_b0 = dLdb_0
-            # old_error_K = dLdK[0]
-            # old_error_M = dLdM[0]
-            # old_error_J = dLdJ[0]
 
             rep = rep + 1
 
@@ -418,7 +343,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('dLdK', dLdK)
         print('dLdb0', dLdb_0)
 
-        return rep, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list, MSE_m_list2, MSE_C_list2, MSE_D_list2
+        return rep, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
 
     def simulate_full(self, T, burn_in=0):
         """
@@ -492,41 +417,32 @@ if __name__ == "__main__":
 
     print('Seed', seed)
 
-    original_netize = 6
+    original_netize = 8
     kinetic_ising = ising(netsize=10, rng=rng)
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
-    vis_units = 4
-    b_size = 0
-    hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, b_size=b_size, rng=rng)
-    hidden_ising.random_wiring()
 
+    vis_units = 5
+    hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, rng=rng)
     T_ori = 500
-    T_sim = 2000
-    eta = 0.01
-    max_reps = 6500
-    full_s, visible_s = hidden_ising.simulate_full(T_ori, burn_in=100)
+    burn_in = 100
+    full_s, visible_s = hidden_ising.simulate_full(T_ori, burn_in=burn_in)
+
     m, C, D = hidden_ising.compute_moments(visible_s, T_ori)
 
-    _, visible_s1 = hidden_ising.simulate_full(T_ori, burn_in=100)
+    # Make a second full simulation to have a baseline of the error due to the stochastic process
+    _, visible_s1 = hidden_ising.simulate_full(T_ori, burn_in=burn_in)
     m1, C1, D1 = hidden_ising.compute_moments(visible_s1, T_ori)
 
-    gradient_mode = 'regular'
-    num_reps, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list, MSE_m_list2, MSE_C_list2, MSE_D_list2 = \
-        hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim, gradient_mode=gradient_mode)
-
-    title_str = f'Seed: {seed}. Vis_units: {vis_units}. b_size: {b_size} Or Simulation steps: {T_ori}. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps}'
-    print(title_str)
-
     print('Comparison between full models to observe the error in the simulation')
-    print('m', m)
-    print('m1', m1)
-    print()
-    print('C', C)
-    print('C1', C1)
-    print()
-    print('D', D)
-    print('D1', D1)
+    # print('m', m)
+    # print('m1', m1)
+    # print()
+    # print('C', C)
+    # print('C1', C1)
+    # print()
+    # print('D', D)
+    # print('D1', D1)
 
     MSE_m = np.mean((m - m1) ** 2)
     MSE_C = np.mean((C - C1) ** 2)
@@ -534,71 +450,94 @@ if __name__ == "__main__":
 
     print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
 
-    print()
+    b_units_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    T_sim = 2000
+    eta = 0.01
+    max_reps = 6500
+    for b_size in b_units_list:
 
-    sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=100)
-    f_sim_m, f_sim_C, f_sim_D = hidden_ising.compute_moments(sim_s, T_sim)
+        hidden_ising.set_hidden_size(b_size=b_size)
+        hidden_ising.random_wiring()
 
-    print('####')
-    print('First simulation')
-    print('Final Error m', m - f_sim_m)
-    print()
-    print('Final Error C', C - f_sim_C)
-    print()
-    print('Final Error D', D - f_sim_D)
 
-    f_MSE_m = np.mean((m - f_sim_m) ** 2)
-    f_MSE_C = np.mean((C - f_sim_C) ** 2)
-    f_MSE_D = np.mean((D - f_sim_D) ** 2)
+        gradient_mode = 'regular'
+        num_reps, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
+            hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim, gradient_mode=gradient_mode)
 
-    MSE_m_list.append(f_MSE_m)
-    MSE_C_list.append(f_MSE_C)
-    MSE_D_list.append(f_MSE_D)
+        title_str = f'Seed: {seed}. Original size: {original_netize}. Visible units: {vis_units}. Hidden units: {b_size}.' \
+                    f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
+        print(title_str)
 
-    print('Final MSE m', f_MSE_m, 'C', f_MSE_C, 'D', f_MSE_D)
+        num_simulations = 5
 
-    sim_s2 = hidden_ising.simulate_hidden(T_sim, burn_in=100)
-    f_sim_m2, f_sim_C2, f_sim_D2 = hidden_ising.compute_moments(sim_s2, T_sim)
+        f_MSE_m = 0
+        f_MSE_C = 0
+        f_MSE_D = 0
 
-    print()
-    print('####')
-    print('Second simulation')
-    print('Final Error m', m - f_sim_m2)
-    print()
-    print('Final Error C', C - f_sim_C2)
-    print()
-    print('Final Error D', D - f_sim_D2)
+        # Repeat the simulations to have a good estimation of the error
+        for i in range(0, num_simulations):
+            sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=burn_in)
+            f_sim_m, f_sim_C, f_sim_D = hidden_ising.compute_moments(sim_s, T_sim)
 
-    f_MSE_m2 = np.mean((m - f_sim_m2) ** 2)
-    f_MSE_C2 = np.mean((C - f_sim_C2) ** 2)
-    f_MSE_D2 = np.mean((D - f_sim_D2) ** 2)
+            f_MSE_m += np.mean((m - f_sim_m) ** 2)
+            f_MSE_C += np.mean((C - f_sim_C) ** 2)
+            f_MSE_D += np.mean((D - f_sim_D) ** 2)
 
-    MSE_m_list2.append(f_MSE_m2)
-    MSE_C_list2.append(f_MSE_C2)
-    MSE_D_list2.append(f_MSE_D2)
+        f_MSE_m /= num_simulations
+        f_MSE_C /= num_simulations
+        f_MSE_D /= num_simulations
 
-    print('Final MSE m', f_MSE_m2, 'C', f_MSE_C2, 'D', f_MSE_D2)
+        MSE_m_list.append(f_MSE_m)
+        MSE_C_list.append(f_MSE_C)
+        MSE_D_list.append(f_MSE_D)
+        error_iter_list.append(max_reps)
 
-    fig, ax = plt.subplots(2)
-    ax[0].plot(ell_list[0:num_reps], label='log(ell)')
-    ax[0].plot(error_list[0:num_reps], label='max_grad')
-    ax[0].plot(np.square(error_list[0:num_reps]), label='sq_max_grad')
-    ax[0].plot(np.diff(ell_list[0:num_reps] / eta), '--', label='np.diff(log_ell)/eta')
-    ax[0].set_xlabel('iters')
-    ax[0].legend()
+        print('Final MSE m', f_MSE_m, 'C', f_MSE_C, 'D', f_MSE_D)
 
-    error_iter_list.append(max_reps)
+        print()
 
-    ax[1].plot(error_iter_list, MSE_m_list, label='MSE m')
-    ax[1].plot(error_iter_list, MSE_C_list, label='MSE C')
-    ax[1].plot(error_iter_list, MSE_D_list, label='MSE D')
-    ax[1].plot(error_iter_list, MSE_m_list2, '--', label='MSE m 2')
-    ax[1].plot(error_iter_list, MSE_C_list2, '--', label='MSE C 2')
-    ax[1].plot(error_iter_list, MSE_D_list2, '--', label='MSE D 2')
-    ax[1].set_xlabel('iters')
-    ax[1].legend()
 
-    fig.suptitle(title_str)
-    plt.show()
+        fig, ax = plt.subplots(2, figsize=(16, 10), dpi=100)
+        ax[0].plot(ell_list[0:num_reps], label='log(ell)')
+        ax[0].plot(np.square(error_list[0:num_reps]), label='max_grad^2')
+        ax[0].plot(np.diff(ell_list[0:num_reps] / eta), '--', label='np.diff(log_ell)/eta')
+        ax[0].set_xlabel('iters')
+        ax[0].legend()
+
+        ax[1].plot(error_iter_list, MSE_m_list, label='MSE m')
+        ax[1].plot(error_iter_list, MSE_C_list, label='MSE C')
+        ax[1].plot(error_iter_list, MSE_D_list, label='MSE D')
+        ax[1].set_xlabel('iters')
+        ax[1].legend()
+
+        fig.suptitle(title_str)
+
+        path = f'results/{original_netize}/{vis_units}/'
+
+        # Check whether the specified path exists or not
+        isExist = os.path.exists(path)
+
+        if not isExist:
+            # Create a new directory because it does not exist
+            os.makedirs(path)
+            print(f"The new directory \"{path} \" is created!")
+
+        eta_str = str(eta).replace('.', '')
+        filename = f"{seed}_{original_netize}_{vis_units}_{b_size}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
+        plt.savefig(path + filename)
+
+        np.savez_compressed(path + filename+'.npz',
+                            H=hidden_ising.H,
+                            J=hidden_ising.J,
+                            M=hidden_ising.M,
+                            K=hidden_ising.K,
+                            L=hidden_ising.L,
+                            b0=hidden_ising.b_0,
+                            m=m,
+                            C=C,
+                            D=D,
+                            MSE_m=f_MSE_m,
+                            MSE_C=f_MSE_C,
+                            MSE_D=f_MSE_D)
 
     print('Seed', seed)
