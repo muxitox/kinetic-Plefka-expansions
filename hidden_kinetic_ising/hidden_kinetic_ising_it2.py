@@ -417,12 +417,12 @@ if __name__ == "__main__":
 
     print('Seed', seed)
 
-    original_netize = 8
-    kinetic_ising = ising(netsize=10, rng=rng)
+    original_netsize = 6
+    kinetic_ising = ising(netsize=original_netsize, rng=rng)
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
 
-    vis_units = 5
+    vis_units = 3
     hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, rng=rng)
     T_ori = 500
     burn_in = 100
@@ -464,7 +464,7 @@ if __name__ == "__main__":
         num_reps, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
             hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim, gradient_mode=gradient_mode)
 
-        title_str = f'Seed: {seed}. Original size: {original_netize}. Visible units: {vis_units}. Hidden units: {b_size}.' \
+        title_str = f'Seed: {seed}. Original size: {original_netsize}. Visible units: {vis_units}. Hidden units: {b_size}.' \
                     f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
         print(title_str)
 
@@ -512,7 +512,7 @@ if __name__ == "__main__":
 
         fig.suptitle(title_str)
 
-        path = f'results/{original_netize}/{vis_units}/'
+        path = f'results/stronger_couplings/{original_netsize}/{vis_units}/'
 
         # Check whether the specified path exists or not
         isExist = os.path.exists(path)
@@ -523,7 +523,7 @@ if __name__ == "__main__":
             print(f"The new directory \"{path} \" is created!")
 
         eta_str = str(eta).replace('.', '')
-        filename = f"{seed}_{original_netize}_{vis_units}_{b_size}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
+        filename = f"{seed}_{original_netsize}_{vis_units}_{b_size}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
         plt.savefig(path + filename)
 
         np.savez_compressed(path + filename+'.npz',

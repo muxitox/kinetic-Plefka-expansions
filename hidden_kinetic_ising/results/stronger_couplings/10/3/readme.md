@@ -1,0 +1,1 @@
+All the figures inside this folder are labeled wrong. The original netsize is 10, not 6.
