@@ -1,7 +1,8 @@
 from hidden_kinetic_ising_it2 import HiddenIsing
-from numpy import np
+import numpy as np
 from kinetic_ising import ising
 import os
+import matplotlib.pyplot as plt
 
 
 
@@ -19,12 +20,15 @@ rng = np.random.default_rng(seed)
 
 print('Seed', seed)
 
-original_netsize = 6
+# Important parameters for learning
+original_netsize = 10
+vis_units = 6
+
+
 kinetic_ising = ising(netsize=original_netsize, rng=rng)
 kinetic_ising.random_fields()
 kinetic_ising.random_wiring()
 
-vis_units = 3
 hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, rng=rng)
 T_ori = 500
 burn_in = 100
@@ -115,7 +119,7 @@ for b_size in b_units_list:
 
     fig.suptitle(title_str)
 
-    path = f'results/stronger_couplings/{original_netsize}/{vis_units}/'
+    path = f'results/size_plus_sqrt_size/{original_netsize}/{vis_units}/'
 
     # Check whether the specified path exists or not
     isExist = os.path.exists(path)
