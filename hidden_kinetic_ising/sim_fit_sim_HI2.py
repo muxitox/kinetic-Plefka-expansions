@@ -1,4 +1,4 @@
-from hidden_kinetic_ising_it2 import HiddenIsing
+from hidden_kinetic_ising_it2 import HiddenIsing as HI2
 import numpy as np
 from kinetic_ising import ising
 import os
@@ -21,15 +21,14 @@ rng = np.random.default_rng(seed)
 print('Seed', seed)
 
 # Important parameters for learning
-original_netsize = 10
-vis_units = 6
-
+original_netsize = 6
+vis_units = 3
+save_results = False
 
 kinetic_ising = ising(netsize=original_netsize, rng=rng)
 kinetic_ising.random_fields()
 kinetic_ising.random_wiring()
-
-hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, rng=rng)
+hidden_ising = HI2(kinetic_ising, visible_size=vis_units, rng=rng)
 T_ori = 500
 burn_in = 100
 full_s, visible_s = hidden_ising.simulate_full(T_ori, burn_in=burn_in)
@@ -131,20 +130,23 @@ for b_size in b_units_list:
 
     eta_str = str(eta).replace('.', '')
     filename = f"{seed}_{original_netsize}_{vis_units}_{b_size}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
-    plt.savefig(path + filename)
+    if save_results:
+        plt.savefig(path + filename)
 
-    np.savez_compressed(path + filename+'.npz',
-                        H=hidden_ising.H,
-                        J=hidden_ising.J,
-                        M=hidden_ising.M,
-                        K=hidden_ising.K,
-                        L=hidden_ising.L,
-                        b0=hidden_ising.b_0,
-                        m=m,
-                        C=C,
-                        D=D,
-                        MSE_m=f_MSE_m,
-                        MSE_C=f_MSE_C,
-                        MSE_D=f_MSE_D)
+        np.savez_compressed(path + filename+'.npz',
+                            H=hidden_ising.H,
+                            J=hidden_ising.J,
+                            M=hidden_ising.M,
+                            K=hidden_ising.K,
+                            L=hidden_ising.L,
+                            b0=hidden_ising.b_0,
+                            m=m,
+                            C=C,
+                            D=D,
+                            MSE_m=f_MSE_m,
+                            MSE_C=f_MSE_C,
+                            MSE_D=f_MSE_D)
+    else:
+        plt.show()
 
 print('Seed', seed)

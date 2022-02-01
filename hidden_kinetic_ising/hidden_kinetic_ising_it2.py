@@ -51,12 +51,12 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
 
     def random_wiring(self):  # Set random values for J
-        self.H = self.rng.random(self.visible_size) / self.visible_size
+        self.H = self.rng.random(self.size) * 2 - 1
         self.J = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
-        self.M = self.rng.random((self.visible_size, self.b_size)) / ((self.visible_size + self.b_size) / 2)
-        self.K = self.rng.random((self.b_size, self.visible_size)) / ((self.visible_size + self.b_size) / 2)
-        self.L = self.rng.random((self.b_size, self.b_size)) / self.b_size
-        self.b_0 = self.rng.random(self.b_size) * 2 - 1
+        self.M = self.rng.random((self.visible_size, self.b_size)) / self.visible_size
+        self.K = self.rng.random((self.b_size, self.visible_size)) / self.visible_size
+        self.L = self.rng.random((self.b_size, self.b_size)) / self.visible_size
+        self.b_0 = self.rng.random(self.size) * 2 - 1
 
         print('J', self.J)
         print('M', self.M)
@@ -129,7 +129,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 self.M[max_M_idx] = self.M[max_M_idx] + eta * max_M
                 error = np.abs(max_M)
 
-            elif max_max == 2:
+            elif max_max == 3:
                 self.K[max_K_idx] = self.K[max_K_idx] + eta * max_K
                 error = np.abs(max_K)
 
@@ -199,9 +199,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         MSE_m_list = []
         MSE_C_list = []
         MSE_D_list = []
-        MSE_m_list2 = []
-        MSE_C_list2 = []
-        MSE_D_list2 = []
         error_iter_list = []
 
         plot_interval = 250
