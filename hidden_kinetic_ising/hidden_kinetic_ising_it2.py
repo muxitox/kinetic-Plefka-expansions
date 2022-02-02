@@ -121,7 +121,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 self.H[max_H_idx] = self.H[max_H_idx] + eta * max_H
                 error = np.abs(max_H)
 
-            if max_max == 1:
+            elif max_max == 1:
                 self.J[max_J_idx] = self.J[max_J_idx] + eta * max_J
                 error = np.abs(max_J)
 

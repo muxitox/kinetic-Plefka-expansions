@@ -117,12 +117,13 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         max_b0 = dLdb_0[max_b0_idx]
         max_h0 = dLdh_0[max_h0_idx]
 
-        max_max = np.argmax(np.abs([max_H, max_J, max_K, max_L, max_b0, max_h0]))
+        max_max = np.argmax(np.abs([0, 0, 0, 0, max_b0, 0]))
+        print(max_max)
         if max_max == 0:
             self.H[max_H_idx] = self.H[max_H_idx] + eta * max_H
             error = np.abs(max_H)
 
-        if max_max == 1:
+        elif max_max == 1:
             self.J[max_J_idx] = self.J[max_J_idx] + eta * max_J
             error = np.abs(max_J)
 
@@ -135,11 +136,13 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             error = np.abs(max_L)
 
         elif max_max == 4:
+            print('err_in_cord', dLdb_0)
             self.b_0[max_b0_idx] = self.b_0[max_b0_idx] + eta * max_b0
             error = np.abs(max_b0)
+            print('returned_error', error)
 
         elif max_max == 5:
-            self.h_0[max_b0_idx] = self.h_0[max_h0_idx] + eta * max_h0
+            self.h_0[max_h0_idx] = self.h_0[max_h0_idx] + eta * max_h0
             error = np.abs(max_h0)
 
         else:
@@ -183,7 +186,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         # Initialize variables for learning
         rep = 0
-        error_lim = 0.000005
+        error_lim = 0.0000000005
         error = np.inf
         # Learning loop
         T = T_ori
@@ -203,22 +206,22 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         while error > error_lim and rep < max_reps:
 
-            # if rep % plot_interval == 0:
-            #     print('Iter', rep)
+            print('error', error)
+
+            if rep % plot_interval == 0:
+                print('Iter', rep)
 
             # Initialize the gradients to 0
             dLdH = np.zeros(self.visible_size)
             dLdJ = np.zeros((self.visible_size, self.visible_size))
             dLdK = np.zeros((self.visible_size, self.visible_size))
             dLdL = np.zeros((self.visible_size, self.visible_size))
-            dLdb_0 = np.zeros(self.visible_size)
-            dLdh_0 = np.zeros(self.visible_size)
 
 
             # Likelihood accumulator
             log_ell = 0
 
-            # State of b neurons at time [t-1]
+            # State of b at time [t-1]
             b_t1 = self.b_0
 
             # In t==1 we need the derivative of b wrt K and L at t-1,
@@ -226,10 +229,13 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             db_t1_dK = np.zeros((self.visible_size, self.visible_size, self.visible_size))
             db_t1_dL = np.zeros((self.visible_size, self.visible_size, self.visible_size))
 
-            # h at t == -1
+            # h at t == 0
             h = self.h_0
-            dLdb_0 = s[0] - np.tanh(h)
+            sub_s_tanhh = s[0] - np.tanh(h)
+            dLdb_0 = sub_s_tanhh
+            dLdh_0 = sub_s_tanhh
 
+            log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
 
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
@@ -254,7 +260,10 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 if t == 1:
                     # Compute the gradient of the Likelihood wrt b(0) at t==1
                     b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b) ** 2), self.visible_size)
-                    dLdb_0 = np.dot(sub_s_tanhh, b_tanh_sq_rows*self.L)
+                    dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*self.L)
+
+                    print('dLdb', dLdb_0)
+
 
                 # At t==1 b_t1_dK=0 and b_t1_dL=0
                 # Derivative of b wrt K
@@ -286,6 +295,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             log_ell /= self.visible_size * (T - 1)
 
             error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta, mode=gradient_mode)
+
+            print('err', error)
 
             if rep % plot_interval == 0:
                 sim_s = self.simulate_hidden(T_sim, burn_in=100)
@@ -345,8 +356,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         return full_s, s
 
     # Update the state of the network using Little parallel update rule
-    def hidden_parallel_update(self, sim_s_t1, b_t1):
-
+    def hidden_parallel_update(self, sim_s_t1, b_t1, t=-1):
         h = self.compute_h(sim_s_t1, b_t1)
         r = self.rng.random(self.visible_size)
         sim_s_t1 = -1 + 2 * (2 * self.Beta * h > - np.log(1 / r - 1)).astype(int)
@@ -362,7 +372,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         for t in range(0, T + burn_in):
 
             b = self.compute_b(sim_s, b_t1)
-            sim_s = self.hidden_parallel_update(sim_s, b_t1)
+            sim_s = self.hidden_parallel_update(sim_s, b_t1, t)
             if t >= burn_in:
                 sim_s_list.append(sim_s)
 
