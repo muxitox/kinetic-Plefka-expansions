@@ -1,0 +1,79 @@
+Constant J
+
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.0003253333333333339 C 0.000941170318222223 D 0.0008851205404444446
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 0. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00033959999999999996 C 0.0007855216488888893 D 0.00022019271555555564
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 1. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005476666666666671 C 0.001285520333044445 D 0.0002740801330444444
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 2. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00043013333333333367 C 0.0014004070396000012 D 0.00024567566182222256
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00029086666666666705 C 0.001072850403977778 D 0.00022521531508888905
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 4. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.000401266666666667 C 0.0011493578798888891 D 0.00029199310211111123
+
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0002866666666666667 C 0.0010752301767555559 D 0.0002146214212
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0006034666666666668 C 0.001772749721955556 D 0.0003768238108444445
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00029766666666666684 C 0.0011963598020666676 D 0.00019438595762222229
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 8. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0004743333333333341 C 0.001395927627977779 D 0.00028650205020000025
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 9. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00022106666666666663 C 0.0012393976058666678 D 0.00032939778364444474
+
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 10. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005954000000000006 C 0.0010661690157111115 D 0.0002064635268222224
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.0015872000000000026 C 0.0015865593856000037 D 0.001733298585600002
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 0. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0003313200000000003 C 0.093436566276904 D 0.0008953260769039996
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 1. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005342800000000009 C 0.093635942177752 D 0.0008105833537519997
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 2. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0002466400000000001 C 0.092970324064928 D 0.0008591225769279993
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00033727999999999997 C 0.095437290421488 D 0.0010115833974879997
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 4. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0003712399999999994 C 0.09299357400325599 D 0.001128985259256
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00033743999999999994 C 0.09192496805608 D 0.0008569047600799995
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00032039999999999993 C 0.09205877863156799 D 0.0008100684555680003
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0004405600000000006 C 0.09205552654161599 D 0.0007253188616159992	
+Hasta aqui bien seguro
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 8. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00028872000000000023 C 0.09402363997812799 D 0.0010558450661279997
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 9. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00023024000000000005 C 0.093560130919104 D 0.000733412215104
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 10. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0003782399999999996 C 0.09319977171444797 D 0.0008623912664480003
