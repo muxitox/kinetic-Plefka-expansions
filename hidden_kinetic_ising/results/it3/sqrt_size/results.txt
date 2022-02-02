@@ -1,0 +1,44 @@
+sqrt size normalization
+
+
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.0038666666666666624 C 0.004247003221333329 D 0.0035306014435555508
+
+Seed: [3813]. Original size: 6. Visible units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0018917333333333328 C 0.0027682909519555535 D 0.0037515304186222205
+
+%%%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.03232 C 0.025989282529280008 D 0.018292412129280004
+
+Seed: [3813]. Original size: 8. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00412636 C 0.022903561834151997 D 0.006043175010151997
+
+
+
+%%%%%%%%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.0074272 C 0.0022063972864000006 D 0.003953884006399999
+
+Seed: [3813]. Original size: 10. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.04477131999999999 C 0.015673152549335996 D 0.015995578573336
+
+%%%%%%%%%%%%%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.0068720000000000005 C 0.0032369890204444474 D 0.004360964131555553
+
+Seed: [3813]. Original size: 10. Visible units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.023338433333333332 C 0.008685941689483332 D 0.008517026050594446
+
+%%%%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.10188571428571429 C 0.0044242157557551 D 0.004344709470040816
+
+Seed: [3813]. Original size: 10. Visible units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.01842914285714286 C 0.030358050909575513 D 0.009690387236106124
+
