@@ -17,16 +17,16 @@ def compute_all_gradients(hidden_ising, s, T_ori):
 
     T = T_ori
 
-    num_samples_b = 300
-    b0_list = np.linspace(-10, 10, num=num_samples_b)
-    ell_list = np.zeros(num_samples_b)
-    gradients_list = np.zeros(num_samples_b)
+    num_samples = 1000
+    parameters_list = np.linspace(-20, 20, num=num_samples)
+    ell_list = np.zeros(num_samples)
+    gradients_list = np.zeros(num_samples)
 
-    for idx in range(0, num_samples_b):
+    for idx in range(0, num_samples):
         if idx%100==0:
             print(idx)
 
-        hidden_ising.b_0[0] = b0_list[idx]
+        hidden_ising.L[-1,-1] = parameters_list[idx]
 
         # Initialize the gradients to 0
         dLdH = np.zeros(hidden_ising.visible_size)
@@ -66,7 +66,7 @@ def compute_all_gradients(hidden_ising, s, T_ori):
             log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
 
             # Derivative of the Likelihood wrt H
-            dLdH += s[t] + tanh_h
+            dLdH += sub_s_tanhh
 
             # Derivative of the Likelihood wrt J
             dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
@@ -81,9 +81,7 @@ def compute_all_gradients(hidden_ising, s, T_ori):
                 if t == 2:
                     # Compute the gradient of the Likelihood wrt b(0) at t==2
                     b_t1_sq_rows = broadcast_rows((1 - b_t1 ** 2), hidden_ising.visible_size)
-                    dLdb_0_2 = np.dot(sub_s_tanhh, np.einsum('ig,gz->iz', (hidden_ising.M * b_t1_sq_rows), hidden_ising.L))
-
-                    dLdb_0 += dLdb_0_2
+                    dLdb_0 += np.dot(sub_s_tanhh, np.einsum('ig,gz->iz', (hidden_ising.M * b_t1_sq_rows), hidden_ising.L))
 
                 # Derivative of the Likelihood wrt K
                 dLdK += np.einsum('i,inm->nm', sub_s_tanhh, np.einsum('ig,gnm->inm', hidden_ising.M, b_t1_dK))
@@ -97,15 +95,15 @@ def compute_all_gradients(hidden_ising, s, T_ori):
 
                 # At t==1 b_t1_dK=0 and b_t1_dL=0
                 # Derivative of b wrt K
-                db_dK = np.einsum('ig,gnm->inm', hidden_ising.L, b_t1_dK)
+                db_dK = np.einsum('gk,knm->gnm', hidden_ising.L, b_t1_dK)
                 # Derivative of b wrt L
-                db_dL = np.einsum('ig,gnm->inm', hidden_ising.L, b_t1_dL)
+                db_dL = np.einsum('gk,knm->gnm', hidden_ising.L, b_t1_dL)
                 for i in range(0, hidden_ising.b_size):
                     db_dK[i, i, :] += s[t - 1]
-                    db_dK[i] *= (1 - b[i] ** 2)
+                    db_dK[i, :, :] *= (1 - b[i] ** 2)
 
                     db_dL[i, i, :] += b_t1
-                    db_dL[i] *= (1 - b[i] ** 2)
+                    db_dL[i, :, :] *= (1 - b[i] ** 2)
 
                 # Save the variables for the next step
                 b_t1 = copy.deepcopy(b)
@@ -113,6 +111,7 @@ def compute_all_gradients(hidden_ising, s, T_ori):
                 b_t1_dL = copy.deepcopy(db_dL)
 
         # Normalize the gradients temporally and by the number of spins in the sum of the Likelihood
+        dLdH /= hidden_ising.visible_size * (T - 1)
         dLdJ /= hidden_ising.visible_size * (T - 1)
         dLdM /= hidden_ising.visible_size * (T - 1)
         dLdK /= hidden_ising.visible_size * (T - 1)
@@ -121,15 +120,15 @@ def compute_all_gradients(hidden_ising, s, T_ori):
         # log_ell /= (self.visible_size * (T - 1))
 
         ell_list[idx] = log_ell
-        gradients_list[idx] = dLdb_0[0]
+        gradients_list[idx] = dLdL[-1,-1]
 
     # np_gradients = np.gradient(ell_list, b0_list)
-    np_gradients = np.gradient(ell_list, b0_list) / (hidden_ising.visible_size * (T - 1))
+    np_gradients = np.gradient(ell_list, parameters_list) / (hidden_ising.visible_size * (T - 1))
 
-    plt.plot(b0_list, ell_list, label='log(ell)')
-    plt.plot(b0_list, np_gradients, label='np_gradient')
-    plt.plot(b0_list, gradients_list, '--', label='computed gradient')
-    plt.xlabel('b(0)')
+    # plt.plot(parameters_list, ell_list, label='log(ell)')
+    plt.plot(parameters_list, np_gradients, label='np_gradient')
+    plt.plot(parameters_list, gradients_list, '--', label='computed gradient')
+    plt.xlabel('L[-1,-1]')
     plt.legend()
     plt.show()
 
@@ -149,16 +148,19 @@ if __name__ == "__main__":
 
     print('Seed', seed)
 
-    kinetic_ising = ising(netsize=10, rng=rng)
+    original_netsize = 10
+    vis_units = 7
+    b_size = 3
+    max_reps = 6500
+    kinetic_ising = ising(netsize=original_netsize, rng=rng)
     kinetic_ising.random_fields()
     kinetic_ising.random_wiring()
-    hidden_ising = HiddenIsing(kinetic_ising, visible_size=6, b_size=5, rng=rng)
+    hidden_ising = HiddenIsing(kinetic_ising, visible_size=vis_units, rng=rng)
+    hidden_ising.set_hidden_size(b_size=b_size)
     hidden_ising.random_wiring()
 
     T_ori = 500
     T_sim = 2000
-    eta = 0.01
-    max_reps = 6500
     full_s, visible_s = hidden_ising.simulate_full(T_ori, burn_in=100)
 
     compute_all_gradients(hidden_ising, visible_s, T_ori)

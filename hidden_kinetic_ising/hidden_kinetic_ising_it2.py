@@ -37,7 +37,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
     def set_hidden_size(self, b_size=0):
 
-        self.hidden_size = self.size - self.visible_size
         self.b_size = b_size
 
         self.H = np.zeros(self.visible_size)  # External fields
@@ -51,12 +50,12 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
 
     def random_wiring(self):  # Set random values for J
-        self.H = self.rng.random(self.size) * 2 - 1
+        self.H = self.rng.random(self.visible_size) * 2 - 1
         self.J = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.M = self.rng.random((self.visible_size, self.b_size)) / self.visible_size
         self.K = self.rng.random((self.b_size, self.visible_size)) / self.visible_size
         self.L = self.rng.random((self.b_size, self.b_size)) / self.visible_size
-        self.b_0 = self.rng.random(self.size) * 2 - 1
+        self.b_0 = self.rng.random(self.b_size) * 2 - 1
 
         print('J', self.J)
         print('M', self.M)
@@ -169,7 +168,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :param b_t1: State of the hidden neurons at time t-1
         :return: effective field at time t
         """
-
         return self.H + np.dot(self.M, b_t1) + np.dot(self.J, s_t1)
 
     def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, gradient_mode='regular'):
@@ -258,9 +256,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                     if t == 2:
                         # Compute the gradient of the Likelihood wrt b(0) at t==2
                         b_t1_sq_rows = broadcast_rows((1 - b_t1 ** 2), self.visible_size)
-                        dLdb_0_2 = np.dot(sub_s_tanhh, np.einsum('ig,gz->iz', (self.M * b_t1_sq_rows), self.L))
-
-                        dLdb_0 += dLdb_0_2
+                        dLdb_0 += np.dot(sub_s_tanhh, np.einsum('ig,gz->iz', (self.M * b_t1_sq_rows), self.L))
 
                     # Derivative of the Likelihood wrt K
                     dLdK += np.einsum('i,inm->nm', sub_s_tanhh, np.einsum('ig,gnm->inm', self.M, b_t1_dK))
@@ -273,9 +269,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                     # At t==1 b_t1_dK=0 and b_t1_dL=0
                     # Derivative of b wrt K
-                    db_dK = np.einsum('ig,gnm->inm', self.L, b_t1_dK)
+                    db_dK = np.einsum('gk,knm->gnm', self.L, b_t1_dK)
                     # Derivative of b wrt L
-                    db_dL = np.einsum('ig,gnm->inm', self.L, b_t1_dL)
+                    db_dL = np.einsum('gk,knm->gnm', self.L, b_t1_dL)
                     for i in range(0, self.b_size):
                         db_dK[i, i, :] += s[t - 1]
                         db_dK[i] *= (1 - b[i] ** 2)

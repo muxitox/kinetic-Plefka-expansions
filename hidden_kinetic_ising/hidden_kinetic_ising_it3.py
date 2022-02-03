@@ -63,8 +63,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.J = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.K = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.L = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
-        self.b_0 = self.rng.random(self.visible_size) * 2 - 1
-        self.h_0 = self.rng.random(self.visible_size) * 2 - 1
+        # self.b_0 = self.rng.random(self.visible_size) * 2 - 1
+        # self.h_0 = self.rng.random(self.visible_size) * 2 - 1
 
 
         print('H', self.H)
@@ -74,29 +74,29 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('b_0', self.b_0)
         print()
 
-    def gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta, mode='regular'):
+    def gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, eta, mode='regular'):
 
         if mode == 'regular':
-            error = self.regular_gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta)
+            error = self.regular_gradient_descent(dLdH, dLdJ, dLdK, dLdL, eta)
         elif mode == 'coordinated':
-            error = self.coordinated_gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta)
+            error = self.coordinated_gradient_descent(dLdH, dLdJ, dLdK, dLdL, eta)
 
         return error
 
-    def regular_gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta):
+    def regular_gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, eta):
 
         error = max(np.max(np.abs(dLdH)), np.max(np.abs(dLdJ)), np.max(np.abs(dLdK)),
-                    np.max(np.abs(dLdL)), np.max(dLdb_0), np.max(dLdb_0))
+                    np.max(np.abs(dLdL)))
         self.H = self.H + eta * dLdH
         self.J = self.J + eta * dLdJ
         self.K = self.K + eta * dLdK
         self.L = self.L + eta * dLdL
-        self.b_0 = self.b_0 + eta * dLdb_0
-        self.h_0 = self.h_0 + eta * dLdh_0
+        # self.b_0 = self.b_0 + eta * dLdb_0
+        # self.h_0 = self.h_0 + eta * dLdh_0
 
         return error
 
-    def coordinated_gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta):
+    def coordinated_gradient_descent(self, dLdH, dLdJ, dLdK, dLdL, eta):
 
         max_H_idx = np.argmax(np.abs(dLdH))
         max_J_idx = np.argmax(np.abs(dLdJ))
@@ -105,20 +105,20 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         max_K_idx = np.unravel_index(max_K_idx, dLdK.shape)
         max_L_idx = np.argmax(np.abs(dLdL))
         max_L_idx = np.unravel_index(max_L_idx, dLdL.shape)
-        max_b0_idx = np.argmax(np.abs(dLdb_0))
-        max_b0_idx = np.unravel_index(max_b0_idx, dLdb_0.shape)
-        max_h0_idx = np.argmax(np.abs(dLdh_0))
-        max_h0_idx = np.unravel_index(max_h0_idx, dLdh_0.shape)
+        # max_b0_idx = np.argmax(np.abs(dLdb_0))
+        # max_b0_idx = np.unravel_index(max_b0_idx, dLdb_0.shape)
+        # max_h0_idx = np.argmax(np.abs(dLdh_0))
+        # max_h0_idx = np.unravel_index(max_h0_idx, dLdh_0.shape)
 
         max_H = dLdH[max_H_idx]
         max_J = dLdJ[max_J_idx]
         max_K = dLdK[max_K_idx]
         max_L = dLdL[max_L_idx]
-        max_b0 = dLdb_0[max_b0_idx]
-        max_h0 = dLdh_0[max_h0_idx]
+        # max_b0 = dLdb_0[max_b0_idx]
+        # max_h0 = dLdh_0[max_h0_idx]
 
-        max_max = np.argmax(np.abs([0, 0, 0, 0, max_b0, 0]))
-        print(max_max)
+        max_max = np.argmax(np.abs([max_H, max_J, max_K, max_L]))
+        # print(max_max)
         if max_max == 0:
             self.H[max_H_idx] = self.H[max_H_idx] + eta * max_H
             error = np.abs(max_H)
@@ -135,29 +135,32 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             self.L[max_L_idx] = self.L[max_L_idx] + eta * max_L
             error = np.abs(max_L)
 
-        elif max_max == 4:
-            self.b_0[max_b0_idx] = self.b_0[max_b0_idx] + eta * max_b0
-            error = np.abs(max_b0)
-
-        elif max_max == 5:
-            self.h_0[max_h0_idx] = self.h_0[max_h0_idx] + eta * max_h0
-            error = np.abs(max_h0)
+        # elif max_max == 4:
+        #     self.b_0[max_b0_idx] = self.b_0[max_b0_idx] + eta * max_b0
+        #     error = np.abs(max_b0)
+        #
+        # elif max_max == 5:
+        #     self.h_0[max_h0_idx] = self.h_0[max_h0_idx] + eta * max_h0
+        #     error = np.abs(max_h0)
 
         else:
             print('Error, no gradient has been updated')
 
         return error
 
-    def compute_b(self, s_t1, b_t1):
+    def compute_b(self, s_t1, b_t1, verbose=False):
         """
 
         :param s_t1: State of the spins at time t-1
         :param b_t1: State of the hidden neurons at time t-1
         :return: state of the hidden neurons at time t
         """
+        if verbose:
+            print('dot K s', np.dot(self.K, s_t1))
+            print('np.dot(self.L, np.tanh(b_t1))', np.dot(self.L, np.tanh(b_t1)))
         return np.dot(self.K, s_t1) + np.dot(self.L, np.tanh(b_t1))
 
-    def compute_h(self, s_t1, b):
+    def compute_h(self, s_t1, b, verbose=False):
         """
 
         :param s_t1: State of the spins at time t-1
@@ -165,6 +168,10 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :return: effective field at time t
         """
 
+        if verbose:
+            print('self.H',self.H)
+            print('b', b)
+            print('dot J s', np.dot(self.J, s_t1))
         return self.H + b + np.dot(self.J, s_t1)
 
     def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, gradient_mode='regular'):
@@ -204,8 +211,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         while error > error_lim and rep < max_reps:
 
-            if rep % plot_interval == 0:
-                print('Iter', rep)
+
+            # if rep % plot_interval == 0:
+            #     print('Iter', rep)
 
             # Initialize the gradients to 0
             dLdH = np.zeros(self.visible_size)
@@ -226,31 +234,40 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             db_t1_dL = np.zeros((self.visible_size, self.visible_size, self.visible_size))
 
             # h at t == 0
-            h = self.h_0
-            sub_s_tanhh = s[0] - np.tanh(h)
-            dLdb_0 = sub_s_tanhh
-            dLdh_0 = sub_s_tanhh
+            # h = self.h_0
+            # sub_s_tanhh = s[0] - np.tanh(h)
+            # dLdb_0 = sub_s_tanhh
+            # dLdh_0 = sub_s_tanhh
 
             if rep > 2498 and rep < 2500:
                 print(rep)
-                print('h', h)
-                print('cosh', np.cosh(h))
-            log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
-            if rep > 2498 and rep < 2500:
-                print(log_ell)
+                print('H', self.H)
+                print('L', self.L)
+                print('J', self.J)
+                print('K', self.K)
+
+            # log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
 
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
 
                 # Compute the effective field of every neuron
 
-                b = self.compute_b(s[t - 1], b_t1)
 
-                h = self.compute_h(s[t - 1], b)
+                if rep > 2498 and rep < 2500:
+                    b = self.compute_b(s[t - 1], b_t1, verbose=True)
+
+                    h = self.compute_h(s[t - 1], b, verbose=True)
+
+                else:
+                    b = self.compute_b(s[t - 1], b_t1)
+                    h = self.compute_h(s[t - 1], b)
                 tanh_h = np.tanh(h)
                 sub_s_tanhh = s[t] - tanh_h
 
                 if rep > 2498 and rep < 2500:
+                    print()
+
                     print('t', t)
                     print('h', h)
                     print('cosh', np.cosh(h))
@@ -265,10 +282,13 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 # Derivative of the Likelihood wrt J
                 dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
 
-                if t == 1:
-                    # Compute the gradient of the Likelihood wrt b(0) at t==1
-                    b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b) ** 2), self.visible_size)
-                    dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*self.L)
+
+                # if t == 1:
+                #     # Compute the gradient of the Likelihood wrt b(0) at t==1
+                #     b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b) ** 2), self.visible_size)
+                #     dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*self.L)
+                #
+                #     print('dLdb', dLdb_0)
 
                 # At t==1 b_t1_dK=0 and b_t1_dL=0
                 # Derivative of b wrt K
@@ -295,11 +315,20 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             dLdJ /= self.visible_size * (T - 1)
             dLdK /= self.visible_size * (T - 1)
             dLdL /= self.visible_size * (T - 1)
-            dLdb_0 /= self.visible_size * (T - 1)
-            dLdh_0 /= self.visible_size * (T - 1)
+            # dLdb_0 /= self.visible_size * (T - 1)
+            # dLdh_0 /= self.visible_size * (T - 1)
             log_ell /= self.visible_size * (T - 1)
 
-            error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta, mode=gradient_mode)
+            if rep > 2497 and rep < 2500:
+                print('dLdH', dLdH)
+                print('dLdL', dLdL)
+
+                print('dLdJ', dLdJ)
+                print('dLdK', dLdK)
+
+            # error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta, mode=gradient_mode)
+            error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, eta, mode=gradient_mode)
+
 
             if rep % plot_interval == 0:
                 sim_s = self.simulate_hidden(T_sim, burn_in=100)
@@ -336,7 +365,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         print('dLdJ', dLdJ)
         print('dLdK', dLdK)
-        print('dLdb0', dLdb_0)
+        # print('dLdb0', dLdb_0)
 
         return rep, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
 
