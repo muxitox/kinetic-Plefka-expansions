@@ -18,7 +18,7 @@ def compute_all_gradients(hidden_ising, s, T_ori):
     T = T_ori
 
     num_samples = 1000
-    K_list = np.linspace(-20, 20, num=num_samples)
+    parameters_list = np.linspace(-2, 2, num=num_samples)
     ell_list = np.zeros(num_samples)
     gradients_list = np.zeros(num_samples)
 
@@ -26,12 +26,11 @@ def compute_all_gradients(hidden_ising, s, T_ori):
         if idx%100==0:
             print(idx)
 
-        hidden_ising.K[-1][-1] = K_list[idx]
+        hidden_ising.b_0[0] = parameters_list[idx]
 
         # Initialize the gradients to 0
         dLdH = np.zeros(hidden_ising.visible_size)
         dLdJ = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size))
-        dLdM = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size))
         dLdK = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size))
         dLdL = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size))
         # dLdb_0 = np.zeros(hidden_ising.visible_size)
@@ -48,6 +47,12 @@ def compute_all_gradients(hidden_ising, s, T_ori):
         db_t1_dK = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size, hidden_ising.visible_size))
         db_t1_dL = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size, hidden_ising.visible_size))
 
+        h = hidden_ising.h_0
+        sub_s_tanhh = s[0] - np.tanh(h)
+        dLdb_0 = sub_s_tanhh
+        dLdh_0 = sub_s_tanhh
+
+        log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
 
         # We start in index 1 because we do not have s_{t-1} for t=0
         for t in range(1, T):
@@ -71,45 +76,75 @@ def compute_all_gradients(hidden_ising, s, T_ori):
             # Derivative of the Likelihood wrt J
             dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
 
+            if t == 1:
+                # Compute the gradient of the Likelihood wrt b(0) at t==1
+                b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b) ** 2), hidden_ising.visible_size)
+                dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*hidden_ising.L)
+            #
+            #     print('dLdb', dLdb_0)
+
             # At t==1 b_t1_dK=0 and b_t1_dL=0
             # Derivative of b wrt K
-            db_dK = np.einsum('ig,gnm->inm', hidden_ising.L, db_t1_dK * (1 - np.tanh(b_t1) ** 2))
+            db_dK = np.einsum('ig,gnm->inm', hidden_ising.L * (1 - np.tanh(b_t1) ** 2), db_t1_dK)
             # Derivative of b wrt L
-            db_dL = np.einsum('ig,gnm->inm', hidden_ising.L, db_t1_dL * (1 - np.tanh(b_t1) ** 2))
+            db_dL = np.einsum('ig,gnm->inm', hidden_ising.L * (1 - np.tanh(b_t1) ** 2), db_t1_dL)
             for i in range(0, hidden_ising.visible_size):
                 db_dK[i, i, :] += s[t - 1]
                 db_dL[i, i, :] += np.tanh(b_t1)
 
+            # db_dL2 = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size, hidden_ising.visible_size))
+            # for i in range(0, hidden_ising.visible_size):
+            #     for n in range(0, hidden_ising.visible_size):
+            #         for m in range(0, hidden_ising.visible_size):
+            #             accum = 0
+            #             for k in range(0, hidden_ising.visible_size):
+            #                 accum += hidden_ising.L[i,k] * db_t1_dL[k,n,m] * (1 - np.tanh(b_t1[k]) ** 2)
+            #             db_dL2[i,n,m] = accum
+            #
+            #             if i == n:
+            #                 db_dL2[i,n,m] += np.tanh(b_t1[m])
+
+
+
             # Compute the Jacobians
             # Derivative of the Likelihood wrt K
+            # print('db_dK', db_dK.shape, db_dK)
+            # print('sub_s_tanhh', sub_s_tanhh)
             dLdK += np.einsum('i,inm->nm', sub_s_tanhh, db_dK)
             # Derivative of the Likelihood wrt L
             dLdL += np.einsum('i,inm->nm', sub_s_tanhh, db_dL)
 
+            # for n in range(0, hidden_ising.visible_size):
+            #     for m in range(0, hidden_ising.visible_size):
+            #         for i in range(0, hidden_ising.visible_size):
+            #             dLdL[n,m] += sub_s_tanhh[i] * db_dL[i,n,m]
             # Save the variables for the next step
             b_t1 = copy.deepcopy(b)
             db_t1_dK = copy.deepcopy(db_dK)
             db_t1_dL = copy.deepcopy(db_dL)
 
         # Normalize the gradients temporally and by the number of spins in the sum of the Likelihood
-        dLdJ /= hidden_ising.visible_size * (T - 1)
-        dLdM /= hidden_ising.visible_size * (T - 1)
-        dLdK /= hidden_ising.visible_size * (T - 1)
-        dLdL /= hidden_ising.visible_size * (T - 1)
+        # dLdJ /= hidden_ising.visible_size * (T - 1)
+        # dLdM /= hidden_ising.visible_size * (T - 1)
+        # dLdK /= hidden_ising.visible_size * (T - 1)
+        # dLdL /= hidden_ising.visible_size * (T - 1)
         # dLdb_0 /= hidden_ising.visible_size * (T - 1)
 
         ell_list[idx] = log_ell
-        gradients_list[idx] = dLdK[-1][-1]
+        gradients_list[idx] = dLdb_0[0]
 
-    # np_gradients = np.gradient(ell_list, b0_list)
-    np_gradients = np.gradient(ell_list, K_list) / (hidden_ising.visible_size * (T - 1))
+    np_gradients = np.gradient(ell_list, parameters_list)
+    # np_gradients = np.gradient(ell_list, parameters_list) / (hidden_ising.visible_size * (T - 1))
 
-    print('ell_list', ell_list)
-    plt.plot(K_list, ell_list, label='log(ell)')
-    plt.plot(K_list, np_gradients, label='np_gradient')
-    plt.plot(K_list, gradients_list, '--', label='computed gradient')
-    plt.xlabel('K[-1][-1]')
-    plt.legend()
+
+    fig, ax = plt.subplots(2)
+
+    ax[0].plot(parameters_list, np_gradients, label='np_gradient')
+    ax[0].plot(parameters_list, gradients_list, '--', label='computed gradient')
+    ax[0].legend()
+    ax[1].plot(parameters_list, ell_list, label='log(ell)')
+    ax[1].set_xlabel('b_0[0]')
+    ax[1].legend()
     plt.show()
 
 

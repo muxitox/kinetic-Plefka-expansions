@@ -63,8 +63,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.J = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.K = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.L = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
-        # self.b_0 = self.rng.random(self.visible_size) * 2 - 1
-        # self.h_0 = self.rng.random(self.visible_size) * 2 - 1
+        self.b_0 = self.rng.random(self.visible_size) * 2 - 1
+        self.h_0 = self.rng.random(self.visible_size) * 2 - 1
 
 
         print('H', self.H)
@@ -292,9 +292,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # At t==1 b_t1_dK=0 and b_t1_dL=0
                 # Derivative of b wrt K
-                db_dK = np.einsum('ig,gnm->inm', self.L, db_t1_dK * (1 - np.tanh(b_t1) ** 2))
+                db_dK = np.einsum('ig,gnm->inm', hidden_ising.L * (1 - np.tanh(b_t1) ** 2), db_t1_dK)
                 # Derivative of b wrt L
-                db_dL = np.einsum('ig,gnm->inm', self.L, db_t1_dL * (1 - np.tanh(b_t1) ** 2))
+                db_dL = np.einsum('ig,gnm->inm', hidden_ising.L * (1 - np.tanh(b_t1) ** 2), db_t1_dL)
                 for i in range(0, self.visible_size):
                     db_dK[i, i, :] += s[t - 1]
                     db_dL[i, i, :] += np.tanh(b_t1)
