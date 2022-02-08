@@ -142,7 +142,8 @@ if save_results:
                         D=D,
                         MSE_m=f_MSE_m,
                         MSE_C=f_MSE_C,
-                        MSE_D=f_MSE_D)
+                        MSE_D=f_MSE_D,
+                        log_ell=ell_list[-1])
 else:
     plt.show()
 

@@ -21,9 +21,12 @@ rng = np.random.default_rng(seed)
 print('Seed', seed)
 
 # Important parameters for learning
-original_netsize = 6
-vis_units = 3
-save_results = False
+original_netsize = 10
+vis_units = 7
+max_reps = 6500
+gradient_mode = 'regular'
+folder_code = 'constantJ'
+save_results = True
 
 kinetic_ising = ising(netsize=original_netsize, rng=rng)
 kinetic_ising.random_fields()
@@ -58,15 +61,12 @@ print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
 b_units_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 T_sim = 2000
 eta = 0.01
-max_reps = 6500
 original_moments = (m, C, D)
 for b_size in b_units_list:
 
     hidden_ising.set_hidden_size(b_size=b_size)
     hidden_ising.random_wiring()
 
-
-    gradient_mode = 'regular'
     num_reps, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
         hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim, original_moments, gradient_mode=gradient_mode)
 
@@ -74,7 +74,7 @@ for b_size in b_units_list:
                 f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
     print(title_str)
 
-    num_simulations = 5
+    num_simulations = 3
 
     f_MSE_m = 0
     f_MSE_C = 0
@@ -99,6 +99,7 @@ for b_size in b_units_list:
     error_iter_list.append(max_reps)
 
     print('Final MSE m', f_MSE_m, 'C', f_MSE_C, 'D', f_MSE_D)
+    print('Final Log-Likelihood', ell_list[-1])
 
     print()
 
@@ -118,7 +119,7 @@ for b_size in b_units_list:
 
     fig.suptitle(title_str)
 
-    path = f'results/size_plus_sqrt_size/{original_netsize}/{vis_units}/'
+    path = f'results/it2/{folder_code}/{original_netsize}/{vis_units}/'
 
     # Check whether the specified path exists or not
     isExist = os.path.exists(path)
@@ -145,7 +146,8 @@ for b_size in b_units_list:
                             D=D,
                             MSE_m=f_MSE_m,
                             MSE_C=f_MSE_C,
-                            MSE_D=f_MSE_D)
+                            MSE_D=f_MSE_D,
+                            log_ell=ell_list[-1])
     else:
         plt.show()
 

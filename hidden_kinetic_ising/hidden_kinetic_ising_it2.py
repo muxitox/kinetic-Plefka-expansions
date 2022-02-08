@@ -296,20 +296,31 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode=gradient_mode)
 
             if rep % plot_interval == 0:
-                sim_s = self.simulate_hidden(T_sim, burn_in=100)
-                sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
 
-                MSE_m = np.mean((m - sim_m) ** 2)
-                MSE_C = np.mean((C - sim_C) ** 2)
-                MSE_D = np.mean((D - sim_D) ** 2)
+                num_simulations = 3
 
-                # print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
-                # print()
+                MSE_m = 0
+                MSE_C = 0
+                MSE_D = 0
+
+                # Repeat the simulations to have a good estimation of the error
+                for i in range(0, num_simulations):
+                    sim_s = self.simulate_hidden(T_sim, burn_in=100)
+                    sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
+
+                    MSE_m += np.mean((m - sim_m) ** 2)
+                    MSE_C += np.mean((C - sim_C) ** 2)
+                    MSE_D += np.mean((D - sim_D) ** 2)
+
+                MSE_m /= num_simulations
+                MSE_C /= num_simulations
+                MSE_D /= num_simulations
 
                 MSE_m_list.append(MSE_m)
                 MSE_C_list.append(MSE_C)
                 MSE_D_list.append(MSE_D)
                 error_iter_list.append(rep)
+
 
             error_list[rep] = error
 
@@ -333,7 +344,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('dLdK', dLdK)
         print('dLdb0', dLdb_0)
 
-        return rep, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
+        return rep, ell_list, error_list[:rep], MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
 
     def simulate_full(self, T, burn_in=0):
         """
