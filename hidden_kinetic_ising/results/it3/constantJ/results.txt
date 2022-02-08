@@ -1,50 +1,30 @@
-constantJ
+J normalization:
+
+        self.J = np.ones((self.size, self.size)) * 1/self.size
+
 
 Seed: [3813]. Original size: 6. Visible units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.4796401333333333 C 0.1062894447959111 D 0.08157398279591108
+Final MSE m 1.3143913333333332 C 0.10434975693874071 D 0.0393096216054074
 
-Comparison between full models to observe the error in the simulation
-MSE m 0.0035893333333333294 C 0.0011080611555555515 D 0.002060096711111112
 
-%%%%%%%%%%%
+%%%%%%%%%
 
-Comparison between full models to observe the error in the simulation
-MSE m 0.0032255999999999964 C 0.0016195952844799966 D 0.00020777576448000043
 
 Seed: [3813]. Original size: 8. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.007261200000000001 C 0.055900776405263995 D 0.012180194981263997
+Final MSE m 0.6106152666666667 C 0.08870686053721333 D 0.019367571137213338
 
-%%%%%%%%
-
-Comparison between full models to observe the error in the simulation
-MSE m 0.012303999999999994 C 0.004937438177279991 D 0.0007457965772799996
-
+%%%%%%%%%
 
 Seed: [3813]. Original size: 10. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.0009896799999999989 C 0.11019001477652798 D 0.0037622730965279987
-
-
-%%%%%%%
-
-MSE m 0.014735999999999994 C 0.004119849955555548 D 0.0009031815111111108
-H [ 0.59649551 -0.82262044  0.70826226 -0.29532649  0.35041607 -0.41621592]
-Seed: [3813]. Original size: 10. Visible units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.0004213 C 0.11596102558576109 D 0.0043827241690944435
+Final MSE m 0.0005203999999999993 C 0.10948992363559996 D 0.0036650093689333317
 
 
 %%%%%
 
+Seed: [3813]. Original size: 10. Visible units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00036955555555555505 C 0.11980130941172222 D 0.0044162686524629605
 
-D:\ALPCL\Documents\Projects\PhD\kinetic-Plefka-expansions\hidden_kinetic_ising\hidden_kinetic_ising_it3.py:248: RuntimeWarning: overflow encountered in cosh
-  log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
+%%%%%%%
 
-Comparison between full models to observe the error in the simulation
-MSE m 0.013257142857142853 C 0.005936413476571422 D 0.00248856629289796
-
-  Seed: [3813]. Original size: 10. Visible units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.27972114285714295 C 0.8811729966184488 D 1.005980412985796
-
-C:\Users\ALPCL\miniconda3\envs\kinetic-Plefka-expansions\lib\site-packages\numpy\lib\function_base.py:1280: RuntimeWarning: invalid value encountered in subtract
-  a = op(a[slice1], a[slice2])
-
-%%%%%%%%%
+Seed: [3813]. Original size: 10. Visible units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0006958571428571427 C 0.08942018213480951 D 0.004111634835489796

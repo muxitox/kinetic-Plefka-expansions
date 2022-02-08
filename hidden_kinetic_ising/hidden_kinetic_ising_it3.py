@@ -259,14 +259,14 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # if t == 1:
                 #     # Compute the gradient of the Likelihood wrt b(0) at t==1
-                #      b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b_t1) ** 2), hidden_ising.visible_size)
-                #      dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*hidden_ising.L)
+                #      b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b_t1) ** 2), self.visible_size)
+                #      dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*self.L)
 
                 # At t==1 b_t1_dK=0 and b_t1_dL=0
                 # Derivative of b wrt K
-                db_dK = np.einsum('ig,gnm->inm', hidden_ising.L * (1 - np.tanh(b_t1) ** 2), db_t1_dK)
+                db_dK = np.einsum('ig,gnm->inm', self.L * (1 - np.tanh(b_t1) ** 2), db_t1_dK)
                 # Derivative of b wrt L
-                db_dL = np.einsum('ig,gnm->inm', hidden_ising.L * (1 - np.tanh(b_t1) ** 2), db_t1_dL)
+                db_dL = np.einsum('ig,gnm->inm', self.L * (1 - np.tanh(b_t1) ** 2), db_t1_dL)
                 for i in range(0, self.visible_size):
                     db_dK[i, i, :] += s[t - 1]
                     db_dL[i, i, :] += np.tanh(b_t1)
@@ -303,15 +303,25 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
 
             if rep % plot_interval == 0:
-                sim_s = self.simulate_hidden(T_sim, burn_in=100)
-                sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
 
-                MSE_m = np.mean((m - sim_m) ** 2)
-                MSE_C = np.mean((C - sim_C) ** 2)
-                MSE_D = np.mean((D - sim_D) ** 2)
+                num_simulations = 3
 
-                # print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
-                # print()
+                MSE_m = 0
+                MSE_C = 0
+                MSE_D = 0
+
+                # Repeat the simulations to have a good estimation of the error
+                for i in range(0, num_simulations):
+                    sim_s = self.simulate_hidden(T_sim, burn_in=100)
+                    sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
+
+                    MSE_m += np.mean((m - sim_m) ** 2)
+                    MSE_C += np.mean((C - sim_C) ** 2)
+                    MSE_D += np.mean((D - sim_D) ** 2)
+
+                MSE_m /= num_simulations
+                MSE_C /= num_simulations
+                MSE_D /= num_simulations
 
                 MSE_m_list.append(MSE_m)
                 MSE_C_list.append(MSE_C)

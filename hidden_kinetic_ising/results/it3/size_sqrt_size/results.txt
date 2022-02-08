@@ -1,27 +1,29 @@
 J normalization:
 
-        self.J = self.rng.random((self.size, self.size)) / np.sqrt(self.size)
+        self.J = 1/self.size + self.rng.random((self.size, self.size)) / np.sqrt(self.size)
 
 
 Seed: [3813]. Original size: 6. Visible units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.0008527777777777773 C 0.0019873109470740736 D 0.0031295089841111116
+Final MSE m 0.001097111111111109 C 0.0020991266827407357 D 0.0016644250531111058
+
 
 %%%%%%%%%
 
 Seed: [3813]. Original size: 8. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.0049275333333333345 C 0.024092416999933326 D 0.007349464826599998
+Final MSE m 3.85333333333334e-05 C 0.0029848529215733333 D 5.880150823999961e-05
 
-%%%%%%%%
+%%%%%%%%%%%%
+
 
 Seed: [3813]. Original size: 10. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.04090353333333333 C 0.017395051611746662 D 0.01887091778508
+Final MSE m 4.633333333333342e-05 C 3.514493998666679e-05 D 4.054979986666823e-06
 
-%%%%%
+%%%%%%%%%%
 
 Seed: [3813]. Original size: 10. Visible units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.04775655555555556 C 0.016205691573129625 D 0.015947672573129634
+Final MSE m 1.7944444444444477e-05 C 1.1341019342592622e-05 D 4.909732305555707e-06
 
-%%%%%%%%
+%%%%%%%%%%
 
 Seed: [3813]. Original size: 10. Visible units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
-Final MSE m 0.010459000000000003 C 0.03009903529728571 D 0.007892815848306124
+Final MSE m 3.133333333333339e-05 C 5.162821797278904e-05 D 1.3465469673469644e-05
