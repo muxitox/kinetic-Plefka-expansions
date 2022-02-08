@@ -221,7 +221,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             dLdK = np.zeros((self.visible_size, self.visible_size))
             dLdL = np.zeros((self.visible_size, self.visible_size))
 
-
             # Likelihood accumulator
             log_ell = 0
 
@@ -233,48 +232,23 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             db_t1_dK = np.zeros((self.visible_size, self.visible_size, self.visible_size))
             db_t1_dL = np.zeros((self.visible_size, self.visible_size, self.visible_size))
 
-            # h at t == 0
             # h = self.h_0
             # sub_s_tanhh = s[0] - np.tanh(h)
             # dLdb_0 = sub_s_tanhh
             # dLdh_0 = sub_s_tanhh
-
-            if rep > 2498 and rep < 2500:
-                print(rep)
-                print('H', self.H)
-                print('L', self.L)
-                print('J', self.J)
-                print('K', self.K)
-
             # log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
 
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
 
                 # Compute the effective field of every neuron
-
-
-                if rep > 2498 and rep < 2500:
-                    b = self.compute_b(s[t - 1], b_t1, verbose=True)
-
-                    h = self.compute_h(s[t - 1], b, verbose=True)
-
-                else:
-                    b = self.compute_b(s[t - 1], b_t1)
-                    h = self.compute_h(s[t - 1], b)
+                b = self.compute_b(s[t - 1], b_t1)
+                h = self.compute_h(s[t - 1], b)
                 tanh_h = np.tanh(h)
                 sub_s_tanhh = s[t] - tanh_h
 
-                if rep > 2498 and rep < 2500:
-                    print()
-
-                    print('t', t)
-                    print('h', h)
-                    print('cosh', np.cosh(h))
                 # Compute the log Likelihood to check
                 log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
-                if rep > 2498 and rep < 2500:
-                    print(log_ell)
 
                 # Derivative of the Likelihood wrt H
                 dLdH += sub_s_tanhh
@@ -285,10 +259,8 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # if t == 1:
                 #     # Compute the gradient of the Likelihood wrt b(0) at t==1
-                #     b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b) ** 2), self.visible_size)
-                #     dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*self.L)
-                #
-                #     print('dLdb', dLdb_0)
+                #      b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b_t1) ** 2), hidden_ising.visible_size)
+                #      dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*hidden_ising.L)
 
                 # At t==1 b_t1_dK=0 and b_t1_dL=0
                 # Derivative of b wrt K

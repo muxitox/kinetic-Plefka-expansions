@@ -47,12 +47,11 @@ def compute_all_gradients(hidden_ising, s, T_ori):
         db_t1_dK = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size, hidden_ising.visible_size))
         db_t1_dL = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size, hidden_ising.visible_size))
 
-        h = hidden_ising.h_0
-        sub_s_tanhh = s[0] - np.tanh(h)
-        dLdb_0 = sub_s_tanhh
-        dLdh_0 = sub_s_tanhh
-
-        log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
+        # h = hidden_ising.h_0
+        # sub_s_tanhh = s[0] - np.tanh(h)
+        # dLdb_0 = sub_s_tanhh
+        # dLdh_0 = sub_s_tanhh
+        # log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
 
         # We start in index 1 because we do not have s_{t-1} for t=0
         for t in range(1, T):
@@ -61,11 +60,7 @@ def compute_all_gradients(hidden_ising, s, T_ori):
             b = hidden_ising.compute_b(s[t - 1], b_t1)
             h = hidden_ising.compute_h(s[t - 1], b)
             tanh_h = np.tanh(h)
-            # print(tanh_h)
-            # print('h', np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
-            # print('tanh_h', tanh_h)
             sub_s_tanhh = s[t] - tanh_h
-            # print('sub_s_tanhh', sub_s_tanhh)
 
             # Compute the log Likelihood to check
             log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
@@ -78,10 +73,8 @@ def compute_all_gradients(hidden_ising, s, T_ori):
 
             if t == 1:
                 # Compute the gradient of the Likelihood wrt b(0) at t==1
-                b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b) ** 2), hidden_ising.visible_size)
+                b_tanh_sq_rows = broadcast_rows((1 - np.tanh(b_t1) ** 2), hidden_ising.visible_size)
                 dLdb_0 += np.dot(sub_s_tanhh, b_tanh_sq_rows*hidden_ising.L)
-            #
-            #     print('dLdb', dLdb_0)
 
             # At t==1 b_t1_dK=0 and b_t1_dL=0
             # Derivative of b wrt K
