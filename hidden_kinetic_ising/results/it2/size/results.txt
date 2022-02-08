@@ -1,0 +1,258 @@
+J normalization:
+
+        self.J = self.rng.random((self.size, self.size)) / self.size
+
+%%%%%%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.000560000000000001 C 0.0024613773368888903 D 0.0021060777813333336
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 0. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.000617444444444444 C 0.00042383383744444406 D 0.0003725932818888886
+Final Log-Likelihood -0.5550797336618299
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 1. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005664444444444441 C 0.00045901907251851833 D 0.00020774885029629638
+Final Log-Likelihood -0.5548979947988367
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 2. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0003396666666666671 C 0.0005073252222592594 D 0.0003406690370740743
+Final Log-Likelihood -0.5530608047084069
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 3.533333333333328e-05 C 0.0004973388923703704 D 0.00033235941088888884
+Final Log-Likelihood -0.5517177852367293
+
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 4. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.000844444444444444 C 0.0009406280034814815 D 0.0004013323738518518
+Final Log-Likelihood -0.5524528940780727
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.14808577777777773 C 0.01149324910007408 D 0.004697210729703705
+Final Log-Likelihood -0.5517390775332327
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.815964888888889 C 0.027002797914740733 D 0.0015339562110370363
+Final Log-Likelihood -0.554577226169244
+
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 1.5678464444444444 C 0.0781173900359259 D 0.0037117012951851844
+Final Log-Likelihood -0.5556187907134992
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 8. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0004145555555555553 C 0.0005840219820370372 D 0.0002855677968518516
+Final Log-Likelihood -0.5504957942742732
+
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 9. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.18935500000000002 C 0.028298680705962965 D 0.017884625705962966
+Final Log-Likelihood -0.5538146571665482
+
+Seed: [3813]. Original size: 6. Visible units: 3. Hidden units: 10. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0003873333333333339 C 0.0012534055310370372 D 0.0003145104199259258
+Final Log-Likelihood -0.5526971255244724
+
+%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.004585599999999996 C 0.0025203208704000003 D 0.0027790959103999994
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 0. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0007742666666666669 C 0.038676443820826654 D 0.0011065003541599996
+Final Log-Likelihood -0.5013760469765286
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 1. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.000519933333333333 C 0.03911113650635999 D 0.0009069499863599992
+Final Log-Likelihood -0.5001708230780301
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 2. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.000417533333333333 C 0.037532842265239987 D 0.0007557135852399995
+Final Log-Likelihood -0.5010939333920279
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00018093333333333339 C 0.04049041766909333 D 0.0009597573490933328
+Final Log-Likelihood -0.5016729021762596
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 4. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005411333333333332 C 0.03937554297435998 D 0.0007526349876933329
+Final Log-Likelihood -0.5014461874269065
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 1.0157073333333335 C 0.05025282887847999 D 0.0009210886651466657
+Final Log-Likelihood -0.5026101142705477
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.8927006666666667 C 0.045017693707253316 D 0.0011111262139199992
+Final Log-Likelihood -0.5016837347813919
+
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.8603554666666667 C 0.04542762278823998 D 0.0013499045215733321
+Final Log-Likelihood -0.5016268542417246
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 8. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005005333333333326 C 0.039580783356986664 D 0.0006757861836533328
+Final Log-Likelihood -0.5003821309904791
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 9. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 1.2986621333333332 C 0.060614507643173325 D 0.0016632084431733325
+Final Log-Likelihood -0.5021246287768146
+
+Seed: [3813]. Original size: 8. Visible units: 5. Hidden units: 10. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0006259333333333328 C 0.039949695806759986 D 0.000771965686759999
+Final Log-Likelihood -0.5018570205042726
+
+%%%%%%%%%%%%
+
+
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.0048192000000000035 C 0.001830536396800001 D 0.0019325831168000005
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 0. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.000602333333333334 C 0.000727086016493334 D 0.0003007951231600002
+Final Log-Likelihood -0.567936471992393
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 1. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0004703999999999999 C 0.000701334767466667 D 0.0003258009807999998
+Final Log-Likelihood -0.5667775380691273
+
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 2. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005246666666666672 C 0.0010533401008800001 D 0.00027479292754666664
+Final Log-Likelihood -0.5648324145676881
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00044120000000000026 C 0.0006402129157866669 D 0.00035183624912000014
+Final Log-Likelihood -0.5654774930392266
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 4. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005344000000000002 C 0.0008234209328800002 D 0.00038926034621333317
+Final Log-Likelihood -0.5655020638465151
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0002993333333333338 C 0.0006037044463200002 D 0.00032229985965333334
+Final Log-Likelihood -0.5650881145752806
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00047553333333333396 C 0.0007144945996400004 D 0.00033608975963999986
+Final Log-Likelihood -0.5669696039139962
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.00031946666666666715 C 0.0005786900008800002 D 0.00026231269421333347
+Final Log-Likelihood -0.5654011757263592
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 8. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0003880666666666663 C 0.0007350191218266668 D 0.0002788873484933333
+Final Log-Likelihood -0.5660735560948559
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 9. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0004348000000000001 C 0.0006540026023733337 D 0.00032920110904000006
+Final Log-Likelihood -0.5643168030912306
+
+Seed: [3813]. Original size: 10. Visible units: 5. Hidden units: 10. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.5667604666666667 C 0.024654286630733328 D 0.0008447077907333331
+Final Log-Likelihood -0.5670008876934388
+
+
+%%%%%%%%%%%%%%
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.00709866666666667 C 0.0018042948266666675 D 0.002370022826666667
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 0. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005339444444444444 C 0.0010554684172314826 D 0.00046914827834259264
+Final Log-Likelihood -0.5605991863667983
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 1. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0006796666666666675 C 0.0006885562177962968 D 0.0003696135881666668
+Final Log-Likelihood -0.5594148140896131
+
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 2. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0006255555555555563 C 0.0008164911457592599 D 0.0005816361642777781
+Final Log-Likelihood -0.5593004825451744
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.003516 C 0.0021614903041296298 D 0.0016136535448703707
+Final Log-Likelihood -0.5600288390843005
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 4. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0007025555555555558 C 0.0008594081502592598 D 0.0004696372984074073
+Final Log-Likelihood -0.5586385084593455
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0006841111111111116 C 0.00068997432012963 D 0.0003052321719814815
+Final Log-Likelihood -0.5595313430249761
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0007564444444444442 C 0.0008201957929444449 D 0.0003699087003518517
+Final Log-Likelihood -0.5585422940265266
+
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 8. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 1.4607461666666666 C 0.03753345942876852 D 0.001622090845435185
+Final Log-Likelihood -0.5604908392542296
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 9. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.3271745 C 0.011707390866935183 D 0.0007003538021203704
+Final Log-Likelihood -0.5599992484933818
+
+Seed: [3813]. Original size: 10. Visible units: 6. Hidden units: 10. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0002914444444444447 C 0.0006096367674259262 D 0.0003839302118703706
+Final Log-Likelihood -0.5592646453001703
+
+%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+Comparison between full models to observe the error in the simulation
+MSE m 0.004477714285714288 C 0.002453064834612245 D 0.002281863528489796
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 0. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005013809523809524 C 0.02503007830438776 D 0.000761983141122449
+Final Log-Likelihood -0.5612172548420373
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 1. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0004340476190476193 C 0.026580559287299316 D 0.0007467525458027214
+Final Log-Likelihood -0.5597062457614274
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 2. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0009263809523809534 C 0.026251898864843536 D 0.0008162152049795926
+Final Log-Likelihood -0.5610527488926529
+
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0010913333333333346 C 0.026323988774163264 D 0.0007523437265442183
+Final Log-Likelihood -0.560110564134996
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 4. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0007602380952380954 C 0.025393670011843533 D 0.00067715121592517
+Final Log-Likelihood -0.5584230116058673
+
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.000721952380952381 C 0.02581861119131292 D 0.0007543010756666668
+Final Log-Likelihood -0.5604953866217988
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0006470952380952383 C 0.025990060041285706 D 0.0007580355174761907
+Final Log-Likelihood -0.5586981239816069
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0004280952380952383 C 0.0259315008932653 D 0.0007067444306802723
+Final Log-Likelihood -0.5605915686111808
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 8. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.3084726190476191 C 0.03080538798621088 D 0.0008686333671632653
+Final Log-Likelihood -0.5605540316646188
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 9. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005916190476190479 C 0.02635226518247619 D 0.0005146342845170068
+Final Log-Likelihood -0.5602135010364302
+
+Seed: [3813]. Original size: 10. Visible units: 7. Hidden units: 10. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
+Final MSE m 0.0005099523809523812 C 0.02560254870890476 D 0.0006614585932585034
+Final Log-Likelihood -0.5571766609229044
