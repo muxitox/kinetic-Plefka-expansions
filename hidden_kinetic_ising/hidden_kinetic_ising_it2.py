@@ -344,7 +344,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('dLdK', dLdK)
         print('dLdb0', dLdb_0)
 
-        return rep, ell_list, error_list[:rep], MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
+        return ell_list[:rep], error_list[:rep], MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
 
     def simulate_full(self, T, burn_in=0):
         """

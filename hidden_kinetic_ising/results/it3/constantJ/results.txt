@@ -3,28 +3,47 @@ J normalization:
         self.J = np.ones((self.size, self.size)) * 1/self.size
 
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.0035893333333333294 C 0.0011080611555555515 D 0.002060096711111112
+
 Seed: [3813]. Original size: 6. Visible units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 1.3143913333333332 C 0.10434975693874071 D 0.0393096216054074
-
+Final Log-Likelihood -0.4235992913054586
 
 %%%%%%%%%
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.0032255999999999964 C 0.0016195952844799966 D 0.00020777576448000043
 
 Seed: [3813]. Original size: 8. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.6106152666666667 C 0.08870686053721333 D 0.019367571137213338
+Final Log-Likelihood -0.4664460129226282
 
 %%%%%%%%%
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.012303999999999994 C 0.004937438177279991 D 0.0007457965772799996
+
 Seed: [3813]. Original size: 10. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.0005203999999999993 C 0.10948992363559996 D 0.0036650093689333317
+Final Log-Likelihood -0.5129455658742593
 
 
 %%%%%
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.014735999999999994 C 0.004119849955555548 D 0.0009031815111111108
+
 Seed: [3813]. Original size: 10. Visible units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.00036955555555555505 C 0.11980130941172222 D 0.0044162686524629605
+Final Log-Likelihood -0.5294064183857584
 
 %%%%%%%
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.013257142857142853 C 0.005936413476571422 D 0.00248856629289796
+
 Seed: [3813]. Original size: 10. Visible units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.0006958571428571427 C 0.08942018213480951 D 0.004111634835489796
+Final Log-Likelihood -0.5111251189894739
+

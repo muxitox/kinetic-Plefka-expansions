@@ -25,7 +25,7 @@ original_netsize = 10
 vis_units = 7
 max_reps = 6500
 gradient_mode = 'regular'
-folder_code = 'constantJ'
+folder_code = 'size_sqrt_size'
 save_results = True
 
 kinetic_ising = ising(netsize=original_netsize, rng=rng)
@@ -67,7 +67,7 @@ for b_size in b_units_list:
     hidden_ising.set_hidden_size(b_size=b_size)
     hidden_ising.random_wiring()
 
-    num_reps, ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
+    ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
         hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim, original_moments, gradient_mode=gradient_mode)
 
     title_str = f'Seed: {seed}. Original size: {original_netsize}. Visible units: {vis_units}. Hidden units: {b_size}.' \
@@ -105,9 +105,9 @@ for b_size in b_units_list:
 
 
     fig, ax = plt.subplots(2, figsize=(16, 10), dpi=100)
-    ax[0].plot(ell_list[0:num_reps], label='log(ell)')
-    ax[0].plot(np.square(error_list[0:num_reps]), label='max_grad^2')
-    ax[0].plot(np.diff(ell_list[0:num_reps] / eta), '--', label='np.diff(log_ell)/eta')
+    ax[0].plot(ell_list, label='log(ell)')
+    ax[0].plot(np.square(error_list), label='max_grad^2')
+    ax[0].plot(np.diff(ell_list / eta), '--', label='np.diff(log_ell)/eta')
     ax[0].set_xlabel('iters')
     ax[0].legend()
 

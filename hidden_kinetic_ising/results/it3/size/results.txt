@@ -3,27 +3,47 @@ J normalization
         self.J = self.rng.random((self.size, self.size)) / self.size
 
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.000560000000000001 C 0.0024613773368888903 D 0.0021060777813333336
+
 Seed: [3813]. Original size: 6. Visible units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.0010263333333333329 C 0.0010416503761111115 D 0.0023920091538888895
+Final Log-Likelihood -0.5529626756594286
+
 
 %%%%%%%%%%%
 
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.004585599999999996 C 0.0025203208704000003 D 0.0027790959103999994
+
 Seed: [3813]. Original size: 8. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.0004768666666666663 C 0.04034916578115999 D 0.0016069793678266664
+Final Log-Likelihood -0.5003781646226227
 
 %%%%%%%%%
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.0048192000000000035 C 0.001830536396800001 D 0.0019325831168000005
+
 Seed: [3813]. Original size: 10. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.00048213333333333336 C 0.0007174025398133335 D 0.0017750904331466668
+Final Log-Likelihood -0.5652216856206632
 
 %%%%%%%%
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.00709866666666667 C 0.0018042948266666675 D 0.002370022826666667
 
 Seed: [3813]. Original size: 10. Visible units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.00040950000000000014 C 0.0007054515686388889 D 0.0014696139482685184
+Final Log-Likelihood -0.5565245742531527
 
 %%%%%%
 
+Comparison between full models to observe the error in the simulation
+MSE m 0.004477714285714288 C 0.002453064834612245 D 0.002281863528489796
+
 Seed: [3813]. Original size: 10. Visible units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.00034090476190476205 C 0.028253601676659867 D 0.002124664622238095
+Final Log-Likelihood -0.5585858711159297

@@ -5,25 +5,29 @@ J normalization:
 
 Seed: [3813]. Original size: 6. Visible units: 3. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 0.001097111111111109 C 0.0020991266827407357 D 0.0016644250531111058
-
+Final Log-Likelihood -0.08227659549060462
 
 %%%%%%%%%
 
 Seed: [3813]. Original size: 8. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 3.85333333333334e-05 C 0.0029848529215733333 D 5.880150823999961e-05
+Final Log-Likelihood -0.12432877085176303
 
 %%%%%%%%%%%%
 
 
 Seed: [3813]. Original size: 10. Visible units: 5. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 4.633333333333342e-05 C 3.514493998666679e-05 D 4.054979986666823e-06
+Final Log-Likelihood -0.03621091780051045
 
 %%%%%%%%%%
 
 Seed: [3813]. Original size: 10. Visible units: 6. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 1.7944444444444477e-05 C 1.1341019342592622e-05 D 4.909732305555707e-06
+Final Log-Likelihood -0.03036985935641684
 
 %%%%%%%%%%
 
 Seed: [3813]. Original size: 10. Visible units: 7. O. Simulation steps: 500. F. Simulation steps: 2000. eta: 0.01. max_reps: 6500 
 Final MSE m 3.133333333333339e-05 C 5.162821797278904e-05 D 1.3465469673469644e-05
+Final Log-Likelihood -0.05921161572327432
