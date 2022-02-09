@@ -11,7 +11,7 @@ from utils import *
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
 
-    def __init__(self, original_ising, visible_size, rng=None):  # Create ising model
+    def __init__(self, visible_size, rng=None):  # Create ising model
         """
         Initializes the class for simulation
 
@@ -21,9 +21,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :param rng: random number generator. If not set, one is created.
         """
 
-        self.ising = original_ising
-        self.size = self.ising.size
-
         self.Beta = 1  # Inverse temperature
 
         if rng:
@@ -32,8 +29,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             self.rng = np.random.default_rng()
 
         self.visible_size = visible_size  # Network size
-
-        self.visible_idx = self.rng.choice(range(0, self.ising.size), self.visible_size)
 
     def set_hidden_size(self, b_size=0):
 
@@ -45,9 +40,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.K = np.zeros((self.b_size, self.visible_size))  # Hidden-to-Neuron couplings
         self.L = np.zeros((self.b_size, self.b_size))  # Hidden-to-Hidden couplings
         self.b_0 = np.zeros(self.b_size)
-
-        self.visible_idx = self.rng.choice(range(0, self.ising.size), self.visible_size)
-
 
     def random_wiring(self):  # Set random values for J
         self.H = self.rng.random(self.visible_size) * 2 - 1
@@ -97,23 +89,25 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         max_H_idx = np.argmax(np.abs(dLdH))
         max_J_idx = np.argmax(np.abs(dLdJ))
         max_J_idx = np.unravel_index(max_J_idx, dLdJ.shape)
-        max_M_idx = np.argmax(np.abs(dLdM))
-        max_M_idx = np.unravel_index(max_M_idx, dLdM.shape)
-        max_K_idx = np.argmax(np.abs(dLdK))
-        max_K_idx = np.unravel_index(max_K_idx, dLdK.shape)
-        max_L_idx = np.argmax(np.abs(dLdL))
-        max_L_idx = np.unravel_index(max_L_idx, dLdL.shape)
-        max_b0_idx = np.argmax(np.abs(dLdb_0))
-        max_b0_idx = np.unravel_index(max_b0_idx, dLdb_0.shape)
 
         max_H = dLdH[max_H_idx]
         max_J = dLdJ[max_J_idx]
-        max_M = dLdM[max_M_idx]
-        max_K = dLdK[max_K_idx]
-        max_L = dLdL[max_L_idx]
-        max_b0 = dLdb_0[max_b0_idx]
 
         if self.b_size > 0:
+
+            max_M_idx = np.argmax(np.abs(dLdM))
+            max_M_idx = np.unravel_index(max_M_idx, dLdM.shape)
+            max_K_idx = np.argmax(np.abs(dLdK))
+            max_K_idx = np.unravel_index(max_K_idx, dLdK.shape)
+            max_L_idx = np.argmax(np.abs(dLdL))
+            max_L_idx = np.unravel_index(max_L_idx, dLdL.shape)
+            max_b0_idx = np.argmax(np.abs(dLdb_0))
+            max_b0_idx = np.unravel_index(max_b0_idx, dLdb_0.shape)
+
+            max_M = dLdM[max_M_idx]
+            max_K = dLdK[max_K_idx]
+            max_L = dLdL[max_L_idx]
+            max_b0 = dLdb_0[max_b0_idx]
 
             max_max = np.argmax(np.abs([max_H, max_J, max_M, max_K, max_L, max_b0]))
             if max_max == 0:
@@ -345,24 +339,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         print('dLdb0', dLdb_0)
 
         return ell_list[:rep], error_list[:rep], MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
-
-    def simulate_full(self, T, burn_in=0):
-        """
-        Simulate the full Kinetic Ising model to produce data
-
-        :param T: number of steps to simulate
-        :param burn_in:
-        :return:
-        """
-        full_s = []
-        s = []
-        for t in range(0, T + burn_in):
-            self.ising.ParallelUpdate()
-            full_s.append(self.ising.s)
-            if t >= burn_in:
-                s.append(self.ising.s[self.visible_idx])
-        # print('Spins', s)
-        return full_s, s
 
     # Update the state of the network using Little parallel update rule
     def hidden_parallel_update(self, sim_s_t1, b_t1):

@@ -3,6 +3,8 @@ import numpy as np
 from kinetic_ising import ising
 import os
 import matplotlib.pyplot as plt
+from simulation import simulate_full
+
 
 
 
@@ -24,22 +26,24 @@ print('Seed', seed)
 original_netsize = 10
 vis_units = 7
 max_reps = 6500
-gradient_mode = 'regular'
+gradient_mode = 'coordinated'
 folder_code = 'size_sqrt_size'
-save_results = True
+save_results = False
 
 kinetic_ising = ising(netsize=original_netsize, rng=rng)
 kinetic_ising.random_fields()
 kinetic_ising.random_wiring()
-hidden_ising = HI2(kinetic_ising, visible_size=vis_units, rng=rng)
+hidden_ising = HI2(visible_size=vis_units, rng=rng)
 T_ori = 500
 burn_in = 100
-full_s, visible_s = hidden_ising.simulate_full(T_ori, burn_in=burn_in)
+
+visible_idx = rng.choice(range(0, kinetic_ising.size), vis_units)
+full_s, visible_s = simulate_full(kinetic_ising, visible_idx, T_ori, burn_in=burn_in)
 
 m, C, D = hidden_ising.compute_moments(visible_s, T_ori)
 
 # Make a second full simulation to have a baseline of the error due to the stochastic process
-_, visible_s1 = hidden_ising.simulate_full(T_ori, burn_in=burn_in)
+_, visible_s1 = simulate_full(kinetic_ising, visible_idx, T_ori, burn_in=burn_in)
 m1, C1, D1 = hidden_ising.compute_moments(visible_s1, T_ori)
 
 print('Comparison between full models to observe the error in the simulation')

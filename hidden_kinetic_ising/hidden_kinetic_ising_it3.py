@@ -24,7 +24,7 @@ from utils import *
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
 
-    def __init__(self, original_ising, visible_size, rng=None):  # Create ising model
+    def __init__(self, visible_size, rng=None):  # Create ising model
         """
         Initializes the class for simulation
 
@@ -33,9 +33,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :param b_size: number of b type "hidden" neurons
         :param rng: random number generator. If not set, one is created.
         """
-
-        self.ising = original_ising
-        self.size = self.ising.size
 
         self.Beta = 1  # Inverse temperature
 
@@ -46,7 +43,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         self.visible_size = visible_size  # Network size
 
-        self.visible_idx = self.rng.choice(range(0, self.ising.size), self.visible_size)
 
         self.H = np.zeros(self.visible_size)  # External fields
         self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
@@ -54,7 +50,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.L = np.zeros((self.visible_size, self.visible_size))  # Hidden-to-Hidden couplings
         self.b_0 = np.zeros(self.visible_size)
         self.h_0 = np.zeros(self.visible_size)
-
 
 
 
@@ -351,23 +346,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         return ell_list[:rep], error_list[:rep], MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
 
-    def simulate_full(self, T, burn_in=0):
-        """
-        Simulate the full Kinetic Ising model to produce data
-
-        :param T: number of steps to simulate
-        :param burn_in:
-        :return:
-        """
-        full_s = []
-        s = []
-        for t in range(0, T + burn_in):
-            self.ising.ParallelUpdate()
-            full_s.append(self.ising.s)
-            if t >= burn_in:
-                s.append(self.ising.s[self.visible_idx])
-        # print('Spins', s)
-        return full_s, s
 
     # Update the state of the network using Little parallel update rule
     def hidden_parallel_update(self, sim_s_t1, b_t1, t=-1):
