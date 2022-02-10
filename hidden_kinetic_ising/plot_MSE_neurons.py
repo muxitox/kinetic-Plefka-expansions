@@ -13,16 +13,14 @@ for i in range(0, 5):
 
 i = 0
 
-J_initialization = 'constantJ'
-
 
 version_folder = 'it2'
 # Set the directory you want to start from
-rootDir = f'./results/{version_folder}/{J_initialization}'
+rootDir = f'./results/neurons/{version_folder}/'
 for dirName, subdirList, fileList in os.walk(rootDir):
     head, num_vis = os.path.split(dirName)
-    _, num_total_neurons = os.path.split(head)
-    if str.isdigit(num_total_neurons) and str.isdigit(num_vis):
+    _, dataset = os.path.split(head)
+    if str.isdigit(dataset) and str.isdigit(num_vis):
 
         MSE_m_list = []
         MSE_D_list = []
@@ -31,7 +29,7 @@ for dirName, subdirList, fileList in os.walk(rootDir):
         hidden_list = []
 
         # Get it3 results
-        it3_path = f'./results/it3/{J_initialization}/{num_total_neurons}/{num_vis}'
+        it3_path = f'./results/neurons/it3/{dataset}/{num_vis}'
         it3_filelist = [f for f in os.listdir(it3_path) if os.path.isfile(os.path.join(it3_path, f))]
 
         it3_filename = None
@@ -58,7 +56,7 @@ for dirName, subdirList, fileList in os.walk(rootDir):
             if ext == '.npz':
                 new_fileList.append(fname)
 
-        hidden_code_pos = 3
+        hidden_code_pos = 2
         new_fileList = sorted(new_fileList, key=lambda x: int(x.split('_')[hidden_code_pos]))
 
         for fname in new_fileList:
@@ -78,13 +76,13 @@ for dirName, subdirList, fileList in os.walk(rootDir):
                 hidden_list.append(num_hidden)
 
         ax[0].plot(hidden_list, MSE_m_list, color=colors[i],
-                   label=f'Original netsize: {num_total_neurons}. Visible units size: {num_vis}')
+                   label=f'Dataset: {dataset}. Visible units size: {num_vis}')
         ax[1].plot(hidden_list, MSE_C_list, color=colors[i],
-                   label=f'Original netsize: {num_total_neurons}. Visible units size: {num_vis}')
+                   label=f'Dataset: {dataset}. Visible units size: {num_vis}')
         ax[2].plot(hidden_list, MSE_D_list, color=colors[i],
-                   label=f'Original netsize: {num_total_neurons}. Visible units size: {num_vis}')
+                   label=f'Dataset: {dataset}. Visible units size: {num_vis}')
         ax[3].plot(hidden_list, log_ell_list, color=colors[i],
-                   label=f'Original netsize: {num_total_neurons}. Visible units size: {num_vis}')
+                   label=f'Dataset: {dataset}. Visible units size: {num_vis}')
 
         i += 1
 
@@ -96,15 +94,11 @@ ax[3].set_ylabel('Likelihood')
 
 ax[3].set_xlabel('Number of hidden units')
 
-# plt.suptitle('J = 1/self.size + self.rng.random((self.size, self.size)) / np.sqrt(self.size)')
-# plt.suptitle('J = self.rng.random((self.size, self.size)) / np.sqrt(self.size)')
-# plt.suptitle('J = self.rng.random((self.size, self.size)) / self.size')
-plt.suptitle('J = 1/self.size')
 
 plt.legend()
 
 # plt.show()
-plt.savefig(f'results/MSE/MSE_{J_initialization}')
+plt.savefig(f'results/MSE/MSE_neurons_{dataset}')
 
 
 

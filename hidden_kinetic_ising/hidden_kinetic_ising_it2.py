@@ -7,6 +7,7 @@ with asymmetric weights and parallel updates.
 import numpy as np
 import copy
 from utils import *
+from common_functions import averaged_MSE
 
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
@@ -165,7 +166,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         return self.H + np.dot(self.M, b_t1) + np.dot(self.J, s_t1)
 
-    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, burn_in=0, gradient_mode='regular'):
+    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, num_simulations=3, burn_in=0, gradient_mode='regular'):
 
         """
 
@@ -177,8 +178,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :param gradient_mode: type of gradient descent to perform. Can be either 'regular' or 'coordinated'
         :return:
         """
-
-        m, C, D = original_moments
 
         # Initialize variables for learning
         rep = 0
@@ -295,32 +294,15 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
             error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdM, dLdb_0, eta, mode=gradient_mode)
 
-            if rep % plot_interval == 0:
+            if (rep % plot_interval == 0) or rep == (max_reps - 1):
+                print('rep', rep)
 
-                num_simulations = 3
-
-                MSE_m = 0
-                MSE_C = 0
-                MSE_D = 0
-
-                # Repeat the simulations to have a good estimation of the error
-                for i in range(0, num_simulations):
-                    sim_s = self.simulate_hidden(T_sim, burn_in=burn_in)
-                    sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
-
-                    MSE_m += np.mean((m - sim_m) ** 2)
-                    MSE_C += np.mean((C - sim_C) ** 2)
-                    MSE_D += np.mean((D - sim_D) ** 2)
-
-                MSE_m /= num_simulations
-                MSE_C /= num_simulations
-                MSE_D /= num_simulations
+                MSE_m, MSE_C, MSE_D = averaged_MSE(self, original_moments, T_sim, num_simulations, burn_in=burn_in)
 
                 MSE_m_list.append(MSE_m)
                 MSE_C_list.append(MSE_C)
                 MSE_D_list.append(MSE_D)
                 error_iter_list.append(rep)
-
 
             error_list[rep] = error
 

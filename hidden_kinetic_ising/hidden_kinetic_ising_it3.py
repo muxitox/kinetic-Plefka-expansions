@@ -9,9 +9,9 @@ import numpy as np
 from kinetic_ising import ising
 import random
 import copy
+from common_functions import averaged_MSE
 
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 
 This code allows to run simulations of the kinetic Ising model,
@@ -43,15 +43,12 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         self.visible_size = visible_size  # Network size
 
-
         self.H = np.zeros(self.visible_size)  # External fields
         self.J = np.zeros((self.visible_size, self.visible_size))  # Spin-to-Spin couplings
         self.K = np.zeros((self.visible_size, self.visible_size))  # Hidden-to-Neuron couplings
         self.L = np.zeros((self.visible_size, self.visible_size))  # Hidden-to-Hidden couplings
         self.b_0 = np.zeros(self.visible_size)
         self.h_0 = np.zeros(self.visible_size)
-
-
 
     def random_wiring(self):  # Set random values for J
         self.H = self.rng.random(self.visible_size) * 2 - 1
@@ -60,7 +57,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.L = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
         self.b_0 = self.rng.random(self.visible_size) * 2 - 1
         self.h_0 = self.rng.random(self.visible_size) * 2 - 1
-
 
         print('H', self.H)
         print('J', self.J)
@@ -164,12 +160,12 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         """
 
         if verbose:
-            print('self.H',self.H)
+            print('self.H', self.H)
             print('b', b)
             print('dot J s', np.dot(self.J, s_t1))
         return self.H + b + np.dot(self.J, s_t1)
 
-    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, burn_in=0, gradient_mode='regular'):
+    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, num_simulations=3, burn_in=0, gradient_mode='regular'):
 
         """
 
@@ -182,7 +178,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :return:
         """
 
-        m, C, D = original_moments
 
         # Initialize variables for learning
         rep = 0
@@ -205,7 +200,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         log_ell_t1 = -np.inf
 
         while error > error_lim and rep < max_reps:
-
 
             # if rep % plot_interval == 0:
             #     print('Iter', rep)
@@ -240,7 +234,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 s_t = np.squeeze(np.asarray(s[t]))
 
-
                 # Compute the effective field of every neuron
                 b = self.compute_b(s_t1, b_t1)
                 h = self.compute_h(s_t1, b)
@@ -255,7 +248,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # Derivative of the Likelihood wrt J
                 dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s_t1)
-
 
                 # if t == 1:
                 #     # Compute the gradient of the Likelihood wrt b(0) at t==1
@@ -273,7 +265,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # Compute the Jacobians
                 # Derivative of the Likelihood wrt K
-                dLdK += np.einsum('i,inm->nm', sub_s_tanhh,  db_dK)
+                dLdK += np.einsum('i,inm->nm', sub_s_tanhh, db_dK)
                 # Derivative of the Likelihood wrt L
                 dLdL += np.einsum('i,inm->nm', sub_s_tanhh, db_dL)
 
@@ -295,27 +287,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             # error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta, mode=gradient_mode)
             error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, eta, mode=gradient_mode)
 
-
-            if rep % plot_interval == 0:
-
-                num_simulations = 3
-
-                MSE_m = 0
-                MSE_C = 0
-                MSE_D = 0
-
-                # Repeat the simulations to have a good estimation of the error
-                for i in range(0, num_simulations):
-                    sim_s = self.simulate_hidden(T_sim, burn_in=burn_in)
-                    sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
-
-                    MSE_m += np.mean((m - sim_m) ** 2)
-                    MSE_C += np.mean((C - sim_C) ** 2)
-                    MSE_D += np.mean((D - sim_D) ** 2)
-
-                MSE_m /= num_simulations
-                MSE_C /= num_simulations
-                MSE_D /= num_simulations
+            if (rep % plot_interval == 0) or rep == (max_reps - 1):
+                # Compute the averaged MSE for m, C and D
+                MSE_m, MSE_C, MSE_D = averaged_MSE(self, original_moments, T_sim, num_simulations, burn_in=burn_in)
 
                 MSE_m_list.append(MSE_m)
                 MSE_C_list.append(MSE_C)
@@ -344,7 +318,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         # print('dLdb0', dLdb_0)
 
         return ell_list[:rep], error_list[:rep], MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
-
 
     # Update the state of the network using Little parallel update rule
     def hidden_parallel_update(self, sim_s_t1, b_t1, t=-1):

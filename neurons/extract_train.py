@@ -25,6 +25,7 @@ from scipy.sparse import csr_matrix
 import os
 from hidden_kinetic_ising.hidden_kinetic_ising_it2 import HiddenIsing as HI2
 from hidden_kinetic_ising.hidden_kinetic_ising_it3 import HiddenIsing as HI3
+from hidden_kinetic_ising.common_functions import plot_likelihood_MSE
 
 reproducible = True
 if reproducible:
@@ -111,96 +112,62 @@ X = X[:T_ori, :]
 # Learn it2
 ###########
 print('Learning it2 with b_sizes', b_units_list)
-# for b_size in b_units_list:
-#
-#     print('b_size', b_size)
-#
-#     hidden_ising = HI2(visible_size=vis_units, rng=rng)
-#     hidden_ising.set_hidden_size(b_size=b_size)
-#     hidden_ising.random_wiring()
-#
-#     ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
-#         hidden_ising.fit(X, eta, max_reps, T_ori, T_sim, original_moments, burn_in=burn_in, gradient_mode=gradient_mode)
-#
-#     title_str = f'Original size: {original_neurons}. Visible units: {vis_units}. Hidden units: {b_size}.' \
-#                 f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
-#     print(title_str)
-#
-#     num_simulations = 3
-#
-#     f_MSE_m = 0
-#     f_MSE_C = 0
-#     f_MSE_D = 0
-#
-#     # Repeat the simulations to have a good estimation of the error
-#     for i in range(0, num_simulations):
-#         sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=burn_in)
-#         f_sim_m, f_sim_C, f_sim_D = hidden_ising.compute_moments(sim_s, T_sim)
-#
-#         f_MSE_m += np.mean((m - f_sim_m) ** 2)
-#         f_MSE_C += np.mean((C - f_sim_C) ** 2)
-#         f_MSE_D += np.mean((D - f_sim_D) ** 2)
-#
-#     f_MSE_m /= num_simulations
-#     f_MSE_C /= num_simulations
-#     f_MSE_D /= num_simulations
-#
-#     MSE_m_list.append(f_MSE_m)
-#     MSE_C_list.append(f_MSE_C)
-#     MSE_D_list.append(f_MSE_D)
-#     error_iter_list.append(max_reps)
-#
-#     print('Final MSE m', f_MSE_m, 'C', f_MSE_C, 'D', f_MSE_D)
-#     print('Final Log-Likelihood', ell_list[-1])
-#
-#     print()
-#
-#     fig, ax = plt.subplots(2, figsize=(16, 10), dpi=100)
-#     ax[0].plot(ell_list, label='log(ell)')
-#     ax[0].plot(np.square(error_list), label='max_grad^2')
-#     ax[0].plot(np.diff(ell_list / eta), '--', label='np.diff(log_ell)/eta')
-#     ax[0].set_xlabel('iters')
-#     ax[0].legend()
-#
-#     ax[1].plot(error_iter_list, MSE_m_list, label='MSE m')
-#     ax[1].plot(error_iter_list, MSE_C_list, label='MSE C')
-#     ax[1].plot(error_iter_list, MSE_D_list, label='MSE D')
-#     ax[1].set_xlabel('iters')
-#     ax[1].legend()
-#
-#     fig.suptitle(title_str)
-#
-#     path = f'../hidden_kinetic_ising/results/neurons/it2/{dataset}/{vis_units}/'
-#
-#     # Check whether the specified path exists or not
-#     isExist = os.path.exists(path)
-#
-#     if not isExist:
-#         # Create a new directory because it does not exist
-#         os.makedirs(path)
-#         print(f"The new directory \"{path} \" is created!")
-#
-#     eta_str = str(eta).replace('.', '')
-#     filename = f"{dataset}_{vis_units}_{b_size}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
-#     if save_results:
-#         plt.savefig(path + filename)
-#
-#         np.savez_compressed(path + filename + '.npz',
-#                             H=hidden_ising.H,
-#                             J=hidden_ising.J,
-#                             M=hidden_ising.M,
-#                             K=hidden_ising.K,
-#                             L=hidden_ising.L,
-#                             b0=hidden_ising.b_0,
-#                             m=m,
-#                             C=C,
-#                             D=D,
-#                             MSE_m=f_MSE_m,
-#                             MSE_C=f_MSE_C,
-#                             MSE_D=f_MSE_D,
-#                             log_ell=ell_list[-1])
-#     else:
-#         plt.show()
+for b_size in b_units_list:
+
+    print('b_size', b_size)
+
+    hidden_ising = HI2(visible_size=vis_units, rng=rng)
+    hidden_ising.set_hidden_size(b_size=b_size)
+    hidden_ising.random_wiring()
+
+    ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
+        hidden_ising.fit(X, eta, max_reps, T_ori, T_sim, original_moments, burn_in=burn_in, gradient_mode=gradient_mode)
+
+    title_str = f'Original size: {original_neurons}. Visible units: {vis_units}. Hidden units: {b_size}.' \
+                f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
+    print(title_str)
+
+    print('Final MSE m', MSE_m_list[-1], 'C', MSE_C_list[-1], 'D', MSE_D_list[-1])
+    print('Final Log-Likelihood', ell_list[-1])
+    print()
+
+    if save_results:
+
+        # Configure the plot
+        fig, ax = plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list,
+                                      MSE_D_list, title_str)
+
+        path = f'../hidden_kinetic_ising/results/neurons/it2/{dataset}/{vis_units}/'
+
+        # Check whether the specified path exists or not
+        isExist = os.path.exists(path)
+
+        if not isExist:
+            # Create a new directory because it does not exist
+            os.makedirs(path)
+            print(f"The new directory \"{path} \" is created!")
+
+        eta_str = str(eta).replace('.', '')
+        filename = f"{dataset}_{vis_units}_{b_size}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
+
+        plt.savefig(path + filename)
+
+        np.savez_compressed(path + filename + '.npz',
+                            H=hidden_ising.H,
+                            J=hidden_ising.J,
+                            M=hidden_ising.M,
+                            K=hidden_ising.K,
+                            L=hidden_ising.L,
+                            b0=hidden_ising.b_0,
+                            m=m,
+                            C=C,
+                            D=D,
+                            MSE_m=MSE_m_list[-1],
+                            MSE_C=MSE_C_list[-1],
+                            MSE_D=MSE_D_list[-1],
+                            log_ell=ell_list[-1])
+    else:
+        plt.show()
 
 ###########
 # Learn it3
@@ -217,63 +184,29 @@ title_str = f'Seed: {seed}. Original size: {original_neurons}. Visible units: {v
             f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
 print(title_str)
 
-num_simulations = 3
 
-f_MSE_m = 0
-f_MSE_C = 0
-f_MSE_D = 0
-
-# Repeat the simulations to have a good estimation of the error
-for i in range(0, num_simulations):
-    sim_s = hidden_ising.simulate_hidden(T_sim, burn_in=burn_in)
-    f_sim_m, f_sim_C, f_sim_D = hidden_ising.compute_moments(sim_s, T_sim)
-
-    f_MSE_m += np.mean((m - f_sim_m) ** 2)
-    f_MSE_C += np.mean((C - f_sim_C) ** 2)
-    f_MSE_D += np.mean((D - f_sim_D) ** 2)
-
-f_MSE_m /= num_simulations
-f_MSE_C /= num_simulations
-f_MSE_D /= num_simulations
-
-MSE_m_list.append(f_MSE_m)
-MSE_C_list.append(f_MSE_C)
-MSE_D_list.append(f_MSE_D)
-error_iter_list.append(max_reps)
-
-print('Final MSE m', f_MSE_m, 'C', f_MSE_C, 'D', f_MSE_D)
+print('Final MSE m', MSE_m_list[-1], 'C', MSE_C_list[-1], 'D', MSE_D_list[-1])
 print('Final Log-Likelihood', ell_list[-1])
-
 print()
 
-fig, ax = plt.subplots(2, figsize=(16, 10), dpi=100)
-ax[0].plot(ell_list, label='log(ell)')
-ax[0].plot(np.square(error_list), label='max_grad^2')
-ax[0].plot(np.diff(ell_list / eta), '--', label='np.diff(log_ell)/eta')
-ax[0].set_xlabel('iters')
-ax[0].legend()
+fig, ax = plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list,
+                              MSE_D_list, title_str)
 
-ax[1].plot(error_iter_list, MSE_m_list, label='MSE m')
-ax[1].plot(error_iter_list, MSE_C_list, label='MSE C')
-ax[1].plot(error_iter_list, MSE_D_list, label='MSE D')
-ax[1].set_xlabel('iters')
-ax[1].legend()
-
-fig.suptitle(title_str)
-
-path = f'../hidden_kinetic_ising/results/neurons/it3/{dataset}/{vis_units}/'
-
-# Check whether the specified path exists or not
-isExist = os.path.exists(path)
-
-if not isExist:
-    # Create a new directory because it does not exist
-    os.makedirs(path)
-    print(f"The new directory \"{path} \" is created!")
-
-eta_str = str(eta).replace('.', '')
-filename = f"{dataset}_{vis_units}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
+# Save results if requested, otherwise plot them
 if save_results:
+    path = f'../hidden_kinetic_ising/results/neurons/it3/{dataset}/{vis_units}/'
+
+    # Check whether the specified path exists or not
+    isExist = os.path.exists(path)
+
+    if not isExist:
+        # Create a new directory because it does not exist
+        os.makedirs(path)
+        print(f"The new directory \"{path} \" is created!")
+
+    eta_str = str(eta).replace('.', '')
+    filename = f"{dataset}_{vis_units}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
+
     plt.savefig(path + filename)
 
     np.savez_compressed(path + filename + '.npz',
@@ -286,9 +219,9 @@ if save_results:
                         m=m,
                         C=C,
                         D=D,
-                        MSE_m=f_MSE_m,
-                        MSE_C=f_MSE_C,
-                        MSE_D=f_MSE_D,
+                        MSE_m=MSE_m_list[-1],
+                        MSE_C=MSE_C_list[-1],
+                        MSE_D=MSE_D_list[-1],
                         log_ell=ell_list[-1])
 else:
     plt.show()
