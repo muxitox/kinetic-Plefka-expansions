@@ -162,9 +162,10 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :param b_t1: State of the hidden neurons at time t-1
         :return: effective field at time t
         """
+
         return self.H + np.dot(self.M, b_t1) + np.dot(self.J, s_t1)
 
-    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, gradient_mode='regular'):
+    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, burn_in=0, gradient_mode='regular'):
 
         """
 
@@ -223,22 +224,26 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             b_t1_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
             b_t1_dL = np.zeros((self.b_size, self.b_size, self.b_size))
 
+            s_t1 = np.squeeze(np.asarray(s[0]))
+
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
 
+                s_t = np.squeeze(np.asarray(s[t]))
+
                 # Compute the effective field of every neuron
-                h = self.compute_h(s[t - 1], b_t1)
+                h = self.compute_h(s_t1, b_t1)
                 tanh_h = np.tanh(h)
-                sub_s_tanhh = s[t] - tanh_h
+                sub_s_tanhh = s_t - tanh_h
 
                 # Compute the log Likelihood to check
-                log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
+                log_ell += np.dot(s_t, h) - np.sum(np.log(2 * np.cosh(h)))
 
                 # Derivative of the Likelihood wrt H
                 dLdH += sub_s_tanhh
 
                 # Derivative of the Likelihood wrt J
-                dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
+                dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s_t1)
 
                 # Save computational load if the number of b neurons < 1
                 if self.b_size > 0:
@@ -259,7 +264,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                     # Compute the necessary information for the next step
                     # At t==1, b(t-1)=0
-                    b = self.compute_b(s[t - 1], b_t1)
+                    b = self.compute_b(s_t1, b_t1)
 
                     # At t==1 b_t1_dK=0 and b_t1_dL=0
                     # Derivative of b wrt K
@@ -267,13 +272,14 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                     # Derivative of b wrt L
                     db_dL = np.einsum('gk,knm->gnm', self.L, b_t1_dL)
                     for i in range(0, self.b_size):
-                        db_dK[i, i, :] += s[t - 1]
+                        db_dK[i, i, :] += s_t1
                         db_dK[i] *= (1 - b[i] ** 2)
 
                         db_dL[i, i, :] += b_t1
                         db_dL[i] *= (1 - b[i] ** 2)
 
                     # Save the variables for the next step
+                    s_t1 = copy.deepcopy(s_t)
                     b_t1 = copy.deepcopy(b)
                     b_t1_dK = copy.deepcopy(db_dK)
                     b_t1_dL = copy.deepcopy(db_dL)
@@ -299,7 +305,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # Repeat the simulations to have a good estimation of the error
                 for i in range(0, num_simulations):
-                    sim_s = self.simulate_hidden(T_sim, burn_in=100)
+                    sim_s = self.simulate_hidden(T_sim, burn_in=burn_in)
                     sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
 
                     MSE_m += np.mean((m - sim_m) ** 2)

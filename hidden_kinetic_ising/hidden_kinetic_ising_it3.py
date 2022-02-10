@@ -169,7 +169,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             print('dot J s', np.dot(self.J, s_t1))
         return self.H + b + np.dot(self.J, s_t1)
 
-    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, gradient_mode='regular'):
+    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, burn_in=0, gradient_mode='regular'):
 
         """
 
@@ -227,29 +227,34 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             db_t1_dK = np.zeros((self.visible_size, self.visible_size, self.visible_size))
             db_t1_dL = np.zeros((self.visible_size, self.visible_size, self.visible_size))
 
+            s_t1 = np.squeeze(np.asarray(s[0]))
+
             # h = self.h_0
-            # sub_s_tanhh = s[0] - np.tanh(h)
+            # sub_s_tanhh = s_t1 - np.tanh(h)
             # dLdb_0 = sub_s_tanhh
             # dLdh_0 = sub_s_tanhh
-            # log_ell += np.dot(s[0], h) - np.sum(np.log(2 * np.cosh(h)))
+            # log_ell += np.dot(s_t1, h) - np.sum(np.log(2 * np.cosh(h)))
 
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
 
+                s_t = np.squeeze(np.asarray(s[t]))
+
+
                 # Compute the effective field of every neuron
-                b = self.compute_b(s[t - 1], b_t1)
-                h = self.compute_h(s[t - 1], b)
+                b = self.compute_b(s_t1, b_t1)
+                h = self.compute_h(s_t1, b)
                 tanh_h = np.tanh(h)
-                sub_s_tanhh = s[t] - tanh_h
+                sub_s_tanhh = s_t - tanh_h
 
                 # Compute the log Likelihood to check
-                log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
+                log_ell += np.dot(s_t, h) - np.sum(np.log(2 * np.cosh(h)))
 
                 # Derivative of the Likelihood wrt H
                 dLdH += sub_s_tanhh
 
                 # Derivative of the Likelihood wrt J
-                dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
+                dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s_t1)
 
 
                 # if t == 1:
@@ -263,7 +268,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 # Derivative of b wrt L
                 db_dL = np.einsum('ig,gnm->inm', self.L * (1 - np.tanh(b_t1) ** 2), db_t1_dL)
                 for i in range(0, self.visible_size):
-                    db_dK[i, i, :] += s[t - 1]
+                    db_dK[i, i, :] += s_t1
                     db_dL[i, i, :] += np.tanh(b_t1)
 
                 # Compute the Jacobians
@@ -273,6 +278,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
                 dLdL += np.einsum('i,inm->nm', sub_s_tanhh, db_dL)
 
                 # Save the variables for the next step
+                s_t1 = copy.deepcopy(s_t)
                 b_t1 = copy.deepcopy(b)
                 db_t1_dK = copy.deepcopy(db_dK)
                 db_t1_dL = copy.deepcopy(db_dL)
@@ -285,13 +291,6 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             # dLdb_0 /= self.visible_size * (T - 1)
             # dLdh_0 /= self.visible_size * (T - 1)
             log_ell /= self.visible_size * (T - 1)
-
-            if rep > 2497 and rep < 2500:
-                print('dLdH', dLdH)
-                print('dLdL', dLdL)
-
-                print('dLdJ', dLdJ)
-                print('dLdK', dLdK)
 
             # error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, dLdb_0, dLdh_0, eta, mode=gradient_mode)
             error = self.gradient_descent(dLdH, dLdJ, dLdK, dLdL, eta, mode=gradient_mode)
@@ -307,7 +306,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
                 # Repeat the simulations to have a good estimation of the error
                 for i in range(0, num_simulations):
-                    sim_s = self.simulate_hidden(T_sim, burn_in=100)
+                    sim_s = self.simulate_hidden(T_sim, burn_in=burn_in)
                     sim_m, sim_C, sim_D = self.compute_moments(sim_s, T_sim)
 
                     MSE_m += np.mean((m - sim_m) ** 2)
