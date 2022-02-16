@@ -1,11 +1,10 @@
-from hidden_kinetic_ising_it2 import HiddenIsing as HI2
 import numpy as np
 from kinetic_ising import ising
 import os
 import matplotlib.pyplot as plt
-from common_functions import simulate_full, plot_likelihood_MSE
 
-
+from hidden_kinetic_ising_it2 import HiddenIsing as HI2
+from utils.common_functions import simulate_full, plot_likelihood_MSE, compute_moments
 
 
 # You can set up a seed here for reproducibility
@@ -23,12 +22,12 @@ rng = np.random.default_rng(seed)
 print('Seed', seed)
 
 # Important parameters for learning
-original_netsize = 8
-vis_units = 7
-max_reps = 10
-gradient_mode = 'coordinated'
-folder_code = 'size_sqrt_size'
-save_results = True
+original_netsize = 6
+vis_units = 3
+max_reps = 6500
+gradient_mode = 'regular'
+folder_code = 'constantJ'
+save_results = False
 
 kinetic_ising = ising(netsize=original_netsize, rng=rng)
 kinetic_ising.random_fields()
@@ -38,27 +37,21 @@ T_ori = 500
 burn_in = 100
 
 visible_idx = rng.choice(range(0, kinetic_ising.size), vis_units)
-full_s, visible_s = simulate_full(kinetic_ising, visible_idx, T_ori, burn_in=burn_in)
+full_s = simulate_full(kinetic_ising, T_ori, burn_in=burn_in)
+visible_s = full_s[:, visible_idx]
 
-m, C, D = hidden_ising.compute_moments(visible_s, T_ori)
+m, C, D = compute_moments(visible_s.T)
 
 # Make a second full simulation to have a baseline of the error due to the stochastic process
-_, visible_s1 = simulate_full(kinetic_ising, visible_idx, T_ori, burn_in=burn_in)
-m1, C1, D1 = hidden_ising.compute_moments(visible_s1, T_ori)
+full_s2 = simulate_full(kinetic_ising, T_ori, burn_in=burn_in)
+visible_s2 = full_s2[:, visible_idx]
+m2, C2, D2 = compute_moments(visible_s2.T)
 
 print('Comparison between full models to observe the error in the simulation')
-# print('m', m)
-# print('m1', m1)
-# print()
-# print('C', C)
-# print('C1', C1)
-# print()
-# print('D', D)
-# print('D1', D1)
 
-MSE_m = np.mean((m - m1) ** 2)
-MSE_C = np.mean((C - C1) ** 2)
-MSE_D = np.mean((D - D1) ** 2)
+MSE_m = np.mean((m - m2) ** 2)
+MSE_C = np.mean((C - C2) ** 2)
+MSE_D = np.mean((D - D2) ** 2)
 
 print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
 

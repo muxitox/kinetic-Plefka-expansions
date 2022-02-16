@@ -5,11 +5,8 @@ This code allows to run simulations of the kinetic Ising model,
 with asymmetric weights and parallel updates.
 """
 
-import numpy as np
 from kinetic_ising import ising
-import random
-import copy
-from common_functions import averaged_MSE
+from utils.common_functions import averaged_MSE
 
 # !/usr/bin/env python3
 """
@@ -19,7 +16,6 @@ with asymmetric weights and parallel updates.
 """
 import numpy as np
 import copy
-from utils import *
 
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
@@ -151,7 +147,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             print('np.dot(self.L, np.tanh(b_t1))', np.dot(self.L, np.tanh(b_t1)))
         return np.dot(self.K, s_t1) + np.dot(self.L, np.tanh(b_t1))
 
-    def compute_h(self, s_t1, b, verbose=False):
+    def compute_h(self, s_t1, b):
         """
 
         :param s_t1: State of the spins at time t-1
@@ -159,13 +155,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         :return: effective field at time t
         """
 
-        if verbose:
-            print('self.H', self.H)
-            print('b', b)
-            print('dot J s', np.dot(self.J, s_t1))
         return self.H + b + np.dot(self.J, s_t1)
 
-    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, num_simulations=3, burn_in=0, gradient_mode='regular'):
+    def fit(self, s, eta, max_reps, T_ori, T_sim, original_moments, num_simulations=5, burn_in=0, gradient_mode='regular'):
 
         """
 
@@ -181,7 +173,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         # Initialize variables for learning
         rep = 0
-        error_lim = 0.0000000005
+        error_lim = 0.0000001
         error = np.inf
         # Learning loop
         T = T_ori
@@ -320,46 +312,27 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         return ell_list[:rep], error_list[:rep], MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list
 
     # Update the state of the network using Little parallel update rule
-    def hidden_parallel_update(self, sim_s_t1, b_t1, t=-1):
-        h = self.compute_h(sim_s_t1, b_t1)
+    def hidden_parallel_update(self, sim_s_t1, b):
+        h = self.compute_h(sim_s_t1, b)
         r = self.rng.random(self.visible_size)
         sim_s_t1 = -1 + 2 * (2 * self.Beta * h > - np.log(1 / r - 1)).astype(int)
 
         return sim_s_t1
 
-    def simulate_hidden(self, T, burn_in=0):
+    def simulate_visible(self, T, burn_in=0):
         # Initialize all visible neurons to -1
         sim_s = np.ones(self.visible_size) * -1
-        sim_s_list = []
+        visible_s_matrix = np.zeros((T, self.visible_size))
         b_t1 = self.b_0
 
         for t in range(0, T + burn_in):
 
             b = self.compute_b(sim_s, b_t1)
-            sim_s = self.hidden_parallel_update(sim_s, b_t1, t)
+            sim_s = self.hidden_parallel_update(sim_s, b)
             if t >= burn_in:
-                sim_s_list.append(sim_s)
+                visible_s_matrix[t - burn_in] = sim_s
 
             b_t1 = copy.deepcopy(b)
 
-        return sim_s_list
+        return visible_s_matrix
 
-    @staticmethod
-    def compute_moments(s_list, T_ori):
-        X = np.array(s_list).T
-        m = X.mean(axis=1)
-        C = X.dot(X.T) / T_ori
-        C -= np.einsum('i,k->ik', m, m, optimize=True)
-        d = 1
-        D = X[:, 0:-d].dot(X[:, d:].T) / T_ori
-        D -= np.einsum('i,k->ik', m, m, optimize=True)
-
-        return m, C, D
-
-
-if __name__ == "__main__":
-    kinetic_ising = ising(netsize=10)
-    hidden_ising = HiddenIsing(kinetic_ising, visible_units_per=0.6, b_size=2)
-    hidden_ising.random_wiring()
-
-    hidden_ising.sim_fit()

@@ -7,7 +7,7 @@ with asymmetric weights and parallel updates.
 import numpy as np
 import copy
 from utils import *
-from common_functions import averaged_MSE
+from utils.common_functions import averaged_MSE
 
 
 class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation class
@@ -181,7 +181,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         # Initialize variables for learning
         rep = 0
-        error_lim = 0.000005
+        error_lim = 0.0000001
         error = np.inf
         # Learning loop
         T = T_ori
@@ -228,7 +228,9 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
             # We start in index 1 because we do not have s_{t-1} for t=0
             for t in range(1, T):
 
+                # s_t = s[t]
                 s_t = np.squeeze(np.asarray(s[t]))
+
 
                 # Compute the effective field of every neuron
                 h = self.compute_h(s_t1, b_t1)
@@ -337,7 +339,24 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
         return sim_s_t1
 
-    def simulate_hidden(self, T, burn_in=0):
+    # def simulate_visible(self, T, burn_in=0):
+    #     # Initialize all visible neurons to -1
+    #     sim_s = np.ones(self.visible_size) * -1
+    #     visible_s_matrix = np.zeros((T, self.visible_size))
+    #     b_t1 = self.b_0
+    #
+    #     for t in range(0, T + burn_in):
+    #
+    #         b = self.compute_b(sim_s, b_t1)
+    #         sim_s = self.hidden_parallel_update(sim_s, b_t1)
+    #         if t >= burn_in:
+    #             visible_s_matrix[t - burn_in] = sim_s
+    #
+    #         b_t1 = copy.deepcopy(b)
+    #
+    #     return visible_s_matrix
+
+    def simulate_visible(self, T, burn_in=0):
         # Initialize all visible neurons to -1
         sim_s = np.ones(self.visible_size) * -1
         sim_s_list = []
@@ -352,17 +371,7 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
 
             b_t1 = copy.deepcopy(b)
 
-        return sim_s_list
+        return np.array(sim_s_list)
 
-    @staticmethod
-    def compute_moments(s_list, T_ori):
-        X = np.array(s_list).T
-        m = X.mean(axis=1)
-        C = X.dot(X.T) / T_ori
-        C -= np.einsum('i,k->ik', m, m, optimize=True)
-        d = 1
-        D = X[:, 0:-d].dot(X[:, d:].T) / T_ori
-        D -= np.einsum('i,k->ik', m, m, optimize=True)
 
-        return m, C, D
 
