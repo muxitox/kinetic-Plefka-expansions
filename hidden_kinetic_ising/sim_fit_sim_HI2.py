@@ -11,9 +11,10 @@ from utils.common_functions import simulate_full, plot_likelihood_MSE, compute_m
 # Seed to check wrong behavior: 6, 2425, 615
 # 3656, 0.6 1, 2, 3
 
+# 3813, 4075, 2692, 3262, 3988
 reproducible = True
 if reproducible:
-    seed = [3813]
+    seed = [1185]
 else:
     seed = np.random.randint(5000, size=1)
 
@@ -22,18 +23,19 @@ rng = np.random.default_rng(seed)
 print('Seed', seed)
 
 # Important parameters for learning
-original_netsize = 6
-vis_units = 3
-max_reps = 6500
+original_netsize = 10
+vis_units = 6
+max_reps = 4000
 gradient_mode = 'regular'
-folder_code = 'constantJ'
-save_results = False
+folder_code = 'size'
+save_results = True
 
 kinetic_ising = ising(netsize=original_netsize, rng=rng)
 kinetic_ising.random_fields()
 kinetic_ising.random_wiring()
 hidden_ising = HI2(visible_size=vis_units, rng=rng)
-T_ori = 500
+T_ori = 1500
+T_sim = 1500
 burn_in = 100
 
 visible_idx = rng.choice(range(0, kinetic_ising.size), vis_units)
@@ -55,16 +57,22 @@ MSE_D = np.mean((D - D2) ** 2)
 
 print('MSE m', MSE_m, 'C', MSE_C, 'D', MSE_D)
 
-b_units_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-T_sim = 2000
+# b_units_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+b_units_list = [0, 1]
 eta = 0.01
 original_moments = (m, C, D)
 for b_size in b_units_list:
 
+    # seed = 'copy'
+    # bg = np.load('../neurons/bg.npy', allow_pickle=True).item()
+    #
+    # rng = np.random.default_rng(bg)
+
     hidden_ising.set_hidden_size(b_size=b_size)
+    hidden_ising.rng = np.random.default_rng(seed)
     hidden_ising.random_wiring()
 
-    ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
+    ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list, MSE_model_m, MSE_model_D, J_mean_list, J_var_list = \
         hidden_ising.fit(visible_s, eta, max_reps, T_ori, T_sim, original_moments, gradient_mode=gradient_mode)
 
     title_str = f'Seed: {seed}. Original size: {original_netsize}. Visible units: {vis_units}. Hidden units: {b_size}.' \
@@ -77,11 +85,11 @@ for b_size in b_units_list:
 
     # Configure the plot
     fig, ax = plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list, MSE_D_list,
-                                  title_str)
+                                  title_str, MSE_model_m, MSE_model_D, J_mean_list, J_var_list)
 
     if save_results:
 
-        path = f'results/it2/{folder_code}/{original_netsize}/{vis_units}/'
+        path = f'results2/it2/{folder_code}/{original_netsize}/{vis_units}/{seed}/'
 
         # Check whether the specified path exists or not
         isExist = os.path.exists(path)

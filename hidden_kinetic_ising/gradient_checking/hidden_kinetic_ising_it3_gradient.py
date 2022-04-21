@@ -33,7 +33,7 @@ def compute_all_gradients(hidden_ising, s, T_ori):
         dLdJ = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size))
         dLdK = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size))
         dLdL = np.zeros((hidden_ising.visible_size, hidden_ising.visible_size))
-        # dLdb_0 = np.zeros(hidden_ising.visible_size)
+        dLdb_0 = np.zeros(hidden_ising.visible_size)
 
         # Likelihood accumulator
         log_ell = 0

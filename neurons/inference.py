@@ -38,7 +38,6 @@ def nsf(num, n=4):
     numstr = ("{0:.%ie}" % (n - 1)).format(num)
     return float(numstr)
 
-
 dataset = 1
 filename = 'stats/stats' + str(dataset) + '.npz'
 data = np.load(filename)
@@ -67,7 +66,6 @@ etaJ = eta / N ** 0.5
 etaJ1 = eta / 10
 # etaJ=eta/10
 
-
 I = mf_ising(N)
 error = 1
 min_error = error
@@ -82,13 +80,6 @@ Dexp1 = (Dexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) / gamma - (1 - 
         Cexp + np.einsum('i,l->il', mexp, mexp, optimize=True)) - np.einsum('i,l->il', mexp, mexp, optimize=True)
 
 while error > error_ref:
-
-    #	I.m,_,I.D = update_P1D_o2(I.H, I.J,mexp,Cexp, Dexp)
-    #	I.update_P1_o2()
-    #	I.update_P1C_o2()
-    #	m1 = update_m_P_t_o2(H, J, mexp,Cexp)
-    #	D1 = update_D_P_t_o2(H, J, m1,mexp,Cexp)
-    #	C1 = update_C_P_t_o2(H, J, m1,Cexp)
 
     m1, D1 = update_m_P_CMS(H, J, mexp, Cexp)
     Cn = update_C_P_CMS(H, J, mexp, m1, D1)
@@ -125,14 +116,14 @@ while error > error_ref:
         print(error < error_ref, rep > max_rep)
         break
 
-folder = 'networks'
+folder = 'results/networks'
 isExist = os.path.exists(folder)
 if not isExist:
     # Create a new directory because it does not exist
     os.makedirs(folder)
 
 filename = folder + '/net_' + str(dataset) + '.npz'
-np.savez_compressed(filename, H=H, J=J, N=N, gamma=gamma)
+np.savez_compressed(filename, H=H, J=J, N=N, gamma=gamma, max_reps=max_rep)
 
 exit()
 # cmap = cm.get_cmap('inferno_r')

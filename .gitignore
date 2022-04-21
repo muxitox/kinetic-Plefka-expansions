@@ -143,3 +143,4 @@ cython_debug/
 # Data folders
 results/data/
 new_results/data/
+hidden_kinetic_ising/results/

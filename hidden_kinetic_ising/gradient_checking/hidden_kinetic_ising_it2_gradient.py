@@ -10,7 +10,7 @@ from kinetic_ising import ising
 import copy
 import matplotlib.pyplot as plt
 from utils import *
-from hidden_kinetic_ising_it2 import HiddenIsing
+from hidden_kinetic_ising.hidden_kinetic_ising_it2 import HiddenIsing
 
 
 def compute_all_gradients(hidden_ising, s, T_ori):
@@ -18,9 +18,12 @@ def compute_all_gradients(hidden_ising, s, T_ori):
     T = T_ori
 
     num_samples = 10000
-    parameters_list = np.linspace(-1.4, -1.1, num=num_samples)
+    parameters_list = np.linspace(-5, 5, num=num_samples)
     ell_list = np.zeros(num_samples)
     gradients_list = np.zeros(num_samples)
+
+    ini_val = 0.03825778
+    final_val = hidden_ising.L[0,0]
 
     for idx in range(0, num_samples):
         if idx%100==0:
@@ -47,29 +50,26 @@ def compute_all_gradients(hidden_ising, s, T_ori):
         db_t1_dK = np.zeros((hidden_ising.b_size, hidden_ising.b_size, hidden_ising.visible_size))
         db_t1_dL = np.zeros((hidden_ising.b_size, hidden_ising.b_size, hidden_ising.b_size))
 
-        # db_dK = np.zeros((self.b_size, self.b_size, self.visible_size))
-        db_dL = np.zeros((hidden_ising.b_size, hidden_ising.b_size, hidden_ising.b_size))
+        s_t1 = np.squeeze(np.asarray(s[0]))
 
         # We start in index 1 because we do not have s_{t-1} for t=0
         for t in range(1, T):
 
+            s_t = np.squeeze(np.asarray(s[t]))
+
             # Compute the derivative of the Likelihood wrt J
-            h = hidden_ising.compute_h(s[t - 1], b_t1)
+            h = hidden_ising.compute_h(s_t, b_t1)
             tanh_h = np.tanh(h)
-            # print(tanh_h)
-            # print('h', np.dot(self.M, b_t1) + np.dot(self.J, s[t - 1]))
-            # print('tanh_h', tanh_h)
-            sub_s_tanhh = s[t] - tanh_h
-            # print('sub_s_tanhh', sub_s_tanhh)
+            sub_s_tanhh = s_t - tanh_h
 
             # Compute the log Likelihood to check
-            log_ell += np.dot(s[t], h) - np.sum(np.log(2 * np.cosh(h)))
+            log_ell += np.dot(s_t, h) - np.sum(np.log(2 * np.cosh(h)))
 
             # Derivative of the Likelihood wrt H
             dLdH += sub_s_tanhh
 
             # Derivative of the Likelihood wrt J
-            dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s[t - 1])
+            dLdJ += np.einsum('i,j->ij', sub_s_tanhh, s_t1)
 
             # Save computational load if the number of b neurons < 1
             if hidden_ising.b_size > 0:
@@ -87,20 +87,10 @@ def compute_all_gradients(hidden_ising, s, T_ori):
                 dLdK += np.einsum('i,inm->nm', sub_s_tanhh, np.einsum('ig,gnm->inm', hidden_ising.M, db_t1_dK))
                 # Derivative of the Likelihood wrt L
                 dLdL += np.einsum('i,inm->nm', sub_s_tanhh, np.einsum('ig,gnm->inm', hidden_ising.M, db_t1_dL))
-                # for n in range(0, hidden_ising.b_size):
-                #     for m in range(0, hidden_ising.b_size):
-                #         for i in range(0, hidden_ising.visible_size):
-                #             accum = 0
-                #             for g in range(0, hidden_ising.b_size):
-                #                 accum += hidden_ising.M[i,g] * db_t1_dL[g,n,m]
-                #
-                #             dLdL[n,m] += sub_s_tanhh[i] * accum
-
-                # print(dLdL)
 
                 # Compute the necessary information for the next step
                 # At t==1, b(t-1)=0
-                b = hidden_ising.compute_b(s[t - 1], b_t1)
+                b = hidden_ising.compute_b(s_t1, b_t1)
                 # print('b', b)
 
                 # At t==1 db_t1_dK=0 and db_t1_dL=0
@@ -109,29 +99,14 @@ def compute_all_gradients(hidden_ising, s, T_ori):
                 # Derivative of b wrt L
                 db_dL = np.einsum('gk,knm->gnm', hidden_ising.L, db_t1_dL)
                 for i in range(0, hidden_ising.b_size):
-                    db_dK[i, i, :] += s[t - 1]
+                    db_dK[i, i, :] += s_t1
                     db_dK[i, :, :] *= (1 - b[i] ** 2)
 
                     db_dL[i, i, :] += b_t1
                     db_dL[i, :, :] *= (1 - b[i] ** 2)
 
-                # db_dL = np.zeros((hidden_ising.b_size, hidden_ising.b_size, hidden_ising.b_size))
-                # for n in range(0, hidden_ising.b_size):
-                #     for m in range(0, hidden_ising.b_size):
-                #         for g in range(0, hidden_ising.b_size):
-                #             accum = 0
-                #             for k in range(0, hidden_ising.b_size):
-                #                 accum += hidden_ising.L[g,k] * db_t1_dL[k,n,m]
-                #             db_dL[g,n,m] = accum
-                #             if g == n:
-                #                 db_dL[g, n, m] += b_t1[m]
-                #
-                #             db_dL[g, n, m] *= 1 - b[g]**2
-
-                # print('dbdl', db_dL)
-
-
                 # Save the variables for the next step
+                s_t1 = copy.deepcopy(s_t)
                 b_t1 = copy.deepcopy(b)
                 db_t1_dK = copy.deepcopy(db_dK)
                 db_t1_dL = copy.deepcopy(db_dL)
@@ -156,8 +131,12 @@ def compute_all_gradients(hidden_ising, s, T_ori):
     #
     ax[0].plot(parameters_list, np_gradients, label='np_gradient')
     ax[0].plot(parameters_list, gradients_list, '--', label='computed gradient')
+    ax[0].axvline(x=ini_val, color='red')
+    ax[0].axvline(x=final_val, color='green')
     ax[0].legend()
-    ax[1].plot(parameters_list, ell_list, label='log(ell)')
+    ax[1].plot(parameters_list, ell_list/(hidden_ising.visible_size * (T - 1)), label='log(ell)')
+    ax[1].axvline(x=ini_val, label='ini_L', color='red')
+    ax[1].axvline(x=final_val, label='final_L', color='green')
     ax[1].set_xlabel('L[0,0]')
     ax[1].legend()
     plt.show()

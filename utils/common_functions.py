@@ -55,8 +55,6 @@ def compute_moments(X, d=1):
     N, T = X.shape
 
     m = np.einsum('it->i', X) / T
-    # m = X.mean(axis=1)
-
 
     C = np.einsum('it,jt->ij', X, X) / T
     D = np.einsum('it,jt->ij', X[:, :-d], X[:, d:]) / (T - 1)
@@ -84,20 +82,25 @@ def compute_moments_sparse(X, d=1):
 
 
 def plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list, MSE_D_list,
-                             title_str):
+                             title_str, MSE_model_m, MSE_model_D, J_mean_list, J_var_list):
 
-    fig, ax = plt.subplots(2, figsize=(16, 10), dpi=100)
+    fig, ax = plt.subplots(3, figsize=(16, 10), dpi=100)
     ax[0].plot(ell_list, label='log(ell)')
     ax[0].plot(np.square(error_list), label='max_grad^2')
     ax[0].plot(np.diff(ell_list / eta), '--', label='np.diff(log_ell)/eta')
-    ax[0].set_xlabel('iters')
     ax[0].legend()
 
-    ax[1].plot(error_iter_list, MSE_m_list, label='MSE m')
-    ax[1].plot(error_iter_list, MSE_C_list, label='MSE C')
-    ax[1].plot(error_iter_list, MSE_D_list, label='MSE D')
-    ax[1].set_xlabel('iters')
+    ax[1].plot(MSE_model_m, label='MSE_infer m')
+    ax[1].plot(MSE_model_D, '--', label='MSE_infer D')
+    ax[1].plot(J_mean_list, label='mean(abs(J))')
+    ax[1].plot(J_var_list, '--', label='var(J)')
     ax[1].legend()
+
+    ax[2].plot(error_iter_list, MSE_m_list, label='MSE_sim m')
+    ax[2].plot(error_iter_list, MSE_C_list, label='MSE_sim C')
+    ax[2].plot(error_iter_list, MSE_D_list, label='MSE_sim D')
+    ax[2].set_xlabel('iters')
+    ax[2].legend()
 
     fig.suptitle(title_str)
 

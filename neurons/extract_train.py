@@ -26,7 +26,7 @@ import os
 from hidden_kinetic_ising.hidden_kinetic_ising_it2 import HiddenIsing as HI2
 from hidden_kinetic_ising.hidden_kinetic_ising_it3 import HiddenIsing as HI3
 from utils.common_functions import plot_likelihood_MSE, compute_moments, compute_moments_sparse
-
+from hidden_kinetic_ising.hidden_kinetic_ising_it2_gradient import compute_all_gradients
 
 reproducible = True
 if reproducible:
@@ -39,11 +39,11 @@ rng = np.random.default_rng(seed)
 
 dataset = 1
 gradient_mode = 'regular'
-max_reps = 4000
-eta = 0.01
+max_reps = 10000
+eta = 0.001
 burn_in = 100
 vis_units = 10
-save_results = True
+save_results = False
 
 filename = 'data/DataSet' + str(dataset) + '.mat'
 mat = scipy.io.loadmat(filename)
@@ -96,6 +96,7 @@ m, C, D = compute_moments(X, d=1)
 X = X.T
 original_moments = (m, C, D)
 b_units_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+b_units_list = [1]
 T_full, _ = X.shape
 T_ori = 1000
 T_sim = 3000
@@ -105,118 +106,128 @@ X = X[:T_ori, :]
 ###########
 # Learn it2
 ###########
-# print('Learning it2 with b_sizes', b_units_list)
-# for b_size in b_units_list:
-#
-#     print('b_size', b_size)
-#
-#     hidden_ising = HI2(visible_size=vis_units, rng=rng)
-#     hidden_ising.set_hidden_size(b_size=b_size)
-#     hidden_ising.random_wiring()
-#
-#     ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
-#         hidden_ising.fit(X, eta, max_reps, T_ori, T_sim, original_moments, burn_in=burn_in, gradient_mode=gradient_mode)
-#
-#     title_str = f'Original size: {original_neurons}. Visible units: {vis_units}. Hidden units: {b_size}.' \
-#                 f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
-#     print(title_str)
-#
-#     print('Final MSE m', MSE_m_list[-1], 'C', MSE_C_list[-1], 'D', MSE_D_list[-1])
-#     print('Final Log-Likelihood', ell_list[-1])
-#     print()
-#
-#     # Configure the plot
-#     fig, ax = plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list,
-#                                   MSE_D_list, title_str)
-#
-#     if save_results:
-#
-#
-#         path = f'../hidden_kinetic_ising/results/neurons/it2/{dataset}/{vis_units}/'
-#
-#         # Check whether the specified path exists or not
-#         isExist = os.path.exists(path)
-#
-#         if not isExist:
-#             # Create a new directory because it does not exist
-#             os.makedirs(path)
-#             print(f"The new directory \"{path} \" is created!")
-#
-#         eta_str = str(eta).replace('.', '')
-#         filename = f"{dataset}_{vis_units}_{b_size}_{seed}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
-#
-#         plt.savefig(path + filename)
-#
-#         np.savez_compressed(path + filename + '.npz',
-#                             H=hidden_ising.H,
-#                             J=hidden_ising.J,
-#                             M=hidden_ising.M,
-#                             K=hidden_ising.K,
-#                             L=hidden_ising.L,
-#                             b0=hidden_ising.b_0,
-#                             m=m,
-#                             C=C,
-#                             D=D,
-#                             MSE_m=MSE_m_list[-1],
-#                             MSE_C=MSE_C_list[-1],
-#                             MSE_D=MSE_D_list[-1],
-#                             log_ell=ell_list[-1])
-#     else:
-#         plt.show()
+print('Learning it2 with b_sizes', b_units_list)
+for b_size in b_units_list:
+
+    print('b_size', b_size)
+
+    # if b_size == 1:
+    #     np.save('bg', rng.bit_generator)
+    #     print(rng.bit_generator.state)
+
+    bg = np.load('bg.npy', allow_pickle=True).item()
+
+    # rng = np.random.default_rng(bg)
+    # print(rng)
+    # print(rng.bit_generator.state['state']['state'])
+
+    hidden_ising = HI2(visible_size=vis_units, rng=rng)
+    hidden_ising.set_hidden_size(b_size=b_size)
+    hidden_ising.random_wiring()
+
+    ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
+        hidden_ising.fit(X, eta, max_reps, T_ori, T_sim, original_moments, burn_in=burn_in, gradient_mode=gradient_mode)
+
+    title_str = f'Original size: {original_neurons}. Visible units: {vis_units}. Hidden units: {b_size}.' \
+                f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
+    print(title_str)
+
+    print('Final MSE m', MSE_m_list[-1], 'C', MSE_C_list[-1], 'D', MSE_D_list[-1])
+    print('Final Log-Likelihood', ell_list[-1])
+    print()
+
+    # Configure the plot
+    fig, ax = plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list,
+                                  MSE_D_list, title_str)
+
+    if save_results:
+
+
+        path = f'../hidden_kinetic_ising/results/neurons/it2/{dataset}/{vis_units}/'
+
+        # Check whether the specified path exists or not
+        isExist = os.path.exists(path)
+
+        if not isExist:
+            # Create a new directory because it does not exist
+            os.makedirs(path)
+            print(f"The new directory \"{path} \" is created!")
+
+        eta_str = str(eta).replace('.', '')
+        filename = f"{dataset}_{vis_units}_{b_size}_{seed}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
+
+        plt.savefig(path + filename)
+
+        np.savez_compressed(path + filename + '.npz',
+                            H=hidden_ising.H,
+                            J=hidden_ising.J,
+                            M=hidden_ising.M,
+                            K=hidden_ising.K,
+                            L=hidden_ising.L,
+                            b0=hidden_ising.b_0,
+                            m=m,
+                            C=C,
+                            D=D,
+                            MSE_m=MSE_m_list[-1],
+                            MSE_C=MSE_C_list[-1],
+                            MSE_D=MSE_D_list[-1],
+                            log_ell=ell_list[-1])
+    else:
+        plt.show()
 
 ###########
 # Learn it3
 ###########
-print('Learning it3')
-
-hidden_ising = HI3(visible_size=vis_units, rng=rng)
-hidden_ising.random_wiring()
-
-ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
-    hidden_ising.fit(X, eta, max_reps, T_ori, T_sim, original_moments, burn_in=burn_in, gradient_mode=gradient_mode)
-
-title_str = f'Seed: {seed}. Original size: {original_neurons}. Visible units: {vis_units}.' \
-            f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
-print(title_str)
-
-
-print('Final MSE m', MSE_m_list[-1], 'C', MSE_C_list[-1], 'D', MSE_D_list[-1])
-print('Final Log-Likelihood', ell_list[-1])
-print()
-
-fig, ax = plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list,
-                              MSE_D_list, title_str)
-
-# Save results if requested, otherwise plot them
-if save_results:
-    path = f'../hidden_kinetic_ising/results/neurons/it3/{dataset}/{vis_units}/'
-
-    # Check whether the specified path exists or not
-    isExist = os.path.exists(path)
-
-    if not isExist:
-        # Create a new directory because it does not exist
-        os.makedirs(path)
-        print(f"The new directory \"{path} \" is created!")
-
-    eta_str = str(eta).replace('.', '')
-    filename = f"{dataset}_{vis_units}_{seed}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
-
-    plt.savefig(path + filename)
-
-    np.savez_compressed(path + filename + '.npz',
-                        H=hidden_ising.H,
-                        J=hidden_ising.J,
-                        K=hidden_ising.K,
-                        L=hidden_ising.L,
-                        b0=hidden_ising.b_0,
-                        h0=hidden_ising.h_0,
-                        m=m,
-                        C=C,
-                        D=D,
-                        MSE_m=MSE_m_list[-1],
-                        MSE_C=MSE_C_list[-1],
-                        MSE_D=MSE_D_list[-1],
-                        log_ell=ell_list[-1])
-else:
-    plt.show()
+# print('Learning it3')
+#
+# hidden_ising = HI3(visible_size=vis_units, rng=rng)
+# hidden_ising.random_wiring()
+#
+# ell_list, error_list, MSE_m_list, MSE_C_list, MSE_D_list, error_iter_list = \
+#     hidden_ising.fit(X, eta, max_reps, T_ori, T_sim, original_moments, burn_in=burn_in, gradient_mode=gradient_mode)
+#
+# title_str = f'Seed: {seed}. Original size: {original_neurons}. Visible units: {vis_units}.' \
+#             f' O. Simulation steps: {T_ori}. F. Simulation steps: {T_sim}. eta: {eta}. max_reps: {max_reps} '
+# print(title_str)
+#
+#
+# print('Final MSE m', MSE_m_list[-1], 'C', MSE_C_list[-1], 'D', MSE_D_list[-1])
+# print('Final Log-Likelihood', ell_list[-1])
+# print()
+#
+# fig, ax = plot_likelihood_MSE(ell_list, error_list, eta, error_iter_list, MSE_m_list, MSE_C_list,
+#                               MSE_D_list, title_str)
+#
+# # Save results if requested, otherwise plot them
+# if save_results:
+#     path = f'../hidden_kinetic_ising/results/neurons/it3/{dataset}/{vis_units}/'
+#
+#     # Check whether the specified path exists or not
+#     isExist = os.path.exists(path)
+#
+#     if not isExist:
+#         # Create a new directory because it does not exist
+#         os.makedirs(path)
+#         print(f"The new directory \"{path} \" is created!")
+#
+#     eta_str = str(eta).replace('.', '')
+#     filename = f"{dataset}_{vis_units}_{seed}_{T_ori}_{T_sim}_eta{eta_str}_{max_reps}_{burn_in}"
+#
+#     plt.savefig(path + filename)
+#
+#     np.savez_compressed(path + filename + '.npz',
+#                         H=hidden_ising.H,
+#                         J=hidden_ising.J,
+#                         K=hidden_ising.K,
+#                         L=hidden_ising.L,
+#                         b0=hidden_ising.b_0,
+#                         h0=hidden_ising.h_0,
+#                         m=m,
+#                         C=C,
+#                         D=D,
+#                         MSE_m=MSE_m_list[-1],
+#                         MSE_C=MSE_C_list[-1],
+#                         MSE_D=MSE_D_list[-1],
+#                         log_ell=ell_list[-1])
+# else:
+#     plt.show()
