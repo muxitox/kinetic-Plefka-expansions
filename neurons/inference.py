@@ -116,7 +116,7 @@ while error > error_ref:
         print(error < error_ref, rep > max_rep)
         break
 
-folder = 'results/networks'
+folder = f'results/dataset_{dataset}/networks'
 isExist = os.path.exists(folder)
 if not isExist:
     # Create a new directory because it does not exist

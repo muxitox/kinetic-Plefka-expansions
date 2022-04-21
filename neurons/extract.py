@@ -181,7 +181,7 @@ del X
 
 # C[range(N),range(N)] = 1 - m**2
 
-folder = 'results/stats'
+folder = f'results/dataset_{dataset}/stats'
 isExist = os.path.exists(folder)
 if not isExist:
     # Create a new directory because it does not exist

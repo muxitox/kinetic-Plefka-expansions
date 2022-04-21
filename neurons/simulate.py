@@ -94,7 +94,7 @@ if __name__ == "__main__":
         print(np.mean(mexp), np.mean(Cexp[iu1]), np.mean(Dexp))
 
 
-    folder = 'results/moments'
+    folder = f'results/dataset_{dataset}/moments'
     isExist = os.path.exists(folder)
     if not isExist:
         # Create a new directory because it does not exist
