@@ -23,16 +23,9 @@ def nsf(num, n=4):
 
 
 if __name__ == "__main__":
-    size = 512                 # Network size
-
-    H0 = 0.5                   # Uniform distribution of fields parameter
-    J0 = 1.0                   # Average value of couplings
-    Js = 0.1                   # Standard deviation of couplings
-
     B = 51                    # Number of values of beta
     T = 128                  # Number of simulation time steps
 
-    iu1 = np.triu_indices(size, 1)
     betas = np.linspace(0, 2, B)
 
     dataset = 1
