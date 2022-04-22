@@ -8,7 +8,7 @@ Hyperparameters for learning dataset 1 from https://crcns.org/data-sets/ssc/ssc-
 according to "Inference in neural networks using conditional mean-field methods" (https://arxiv.org/abs/2107.06850)
 
 r(extraction): 70 ms
-gamma(inference&simulation): 0.70
+gamma(inference&simulation): 0.77
 eta(inference): 1
 T(simulation): 128
 max_rep(inference): 2150
