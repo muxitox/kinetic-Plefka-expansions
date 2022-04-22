@@ -66,7 +66,6 @@ etaJ = eta / N ** 0.5
 etaJ1 = eta / 10
 # etaJ=eta/10
 
-I = mf_ising(N)
 error = 1
 min_error = error
 H = np.arctanh(mexp)

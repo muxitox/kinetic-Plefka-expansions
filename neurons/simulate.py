@@ -48,14 +48,14 @@ if __name__ == "__main__":
     plt.rc('legend', **{'fontsize': 12})
 
     dataset = 1
-    filename = 'stats/stats' + str(dataset) + '.npz'
+    filename = f'results/dataset_{dataset}/stats/stats' + str(dataset) + '.npz'
     data = np.load(filename)
     N = data['N']
     Cexp = data['C']
     Dexp = data['D']
     mexp = data['m']
 
-    filename = 'networks/net_' + str(dataset) + '.npz'
+    filename = f'results/dataset_{dataset}/networks/net_' + str(dataset) + '.npz'
     data = np.load(filename)
     N = data['N']
     H = data['H']

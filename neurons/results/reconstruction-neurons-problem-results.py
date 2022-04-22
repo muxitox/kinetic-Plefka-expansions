@@ -26,7 +26,7 @@ H0 = 0.5
 Js = 0.1
 
 T = 2**7
-iu1 = np.triu_indices(size, 1)
+iu1 = np.triu_indices(166, 1)
 
 offset = np.arange(3)
 width = 0.20
@@ -69,7 +69,7 @@ for ib in range(len(betas)):
 
 
     m_list[ib] = np.mean(m_final)
-    C_list[ib] = np.mean(C_final)
+    C_list[ib] = np.mean(C_final[iu1])
     D_list[ib] = np.mean(D_final)
 
     del data_r
@@ -105,7 +105,7 @@ ax[ncol].axis([np.min(betas), np.max(betas), -1, 0])
 
 ax[ncol].set_xlabel(r'$\beta / \beta_c$', fontsize=18)
 ax[ncol].set_ylabel(
-    r'$\mathrm{e}^{\langle \sigma_t\rangle}$', fontsize=18, rotation=0, labelpad=25)
+    r'$\langle m_{i,t} \rangle$', fontsize=18, rotation=0, labelpad=25)
 ax[
     ncol].text(pos_l[0],
                pos_l[1],

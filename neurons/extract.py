@@ -108,7 +108,7 @@ plt.hist(k ** 2 * N, 20)
 
 X = X.todense() * 2 - 1
 iu1 = np.triu_indices(N, 1)
-m, C, D = compute_moments(X, d=1)
+m, C, D = compute_moments(X, d=d)
 
 # mu1=np.asarray(X1.mean(axis=1)).reshape(-1)
 # mu0=np.asarray(X0.mean(axis=1)).reshape(-1)

@@ -64,7 +64,7 @@ if __name__ == "__main__":
             m, C, D = update_moments_gamma(H_beta, J_beta, N, m_p, C_p, gamma)
 
             if t % 10 == 0 or t == T-1:
-                print(beta_ref, 'P_t1_t_o2', str(t) + '/' + str(T))
+                print(beta_ref, 'H', np.mean(H_beta), 'J', np.mean(J_beta), 'P_t1_t_o2', str(t) + '/' + str(T))
 
         m_final = m
         C_final = C
