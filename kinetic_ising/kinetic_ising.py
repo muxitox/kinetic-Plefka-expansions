@@ -27,10 +27,14 @@ class ising:              # Asymmetric Ising model simulation class
         self.s = self.rng.integers(0, 2, self.size) * 2 - 1
 
     def random_fields(self):        # Set random values for H
-        self.H = self.rng.random(self.size) * 2 - 1
+        self.H = self.rng.normal(loc=0.0, scale=1, size=self.size) * 2 - 1
 
-    def random_wiring(self):        # Set random values for J
-        self.J = self.rng.random((self.size, self.size)) / self.size
+    def random_wiring(self):  # Set random values for J
+        self.J = self.rng.normal(loc=0.0, scale=1, size=(self.size, self.size)) / self.size
+        # self.J = self.rng.random((self.size, self.size)) / np.sqrt(self.size)
+        # self.J = 1/self.size + self.rng.random((self.size, self.size)) / np.sqrt(self.size)
+        # self.J = np.ones((self.size, self.size)) * 1/self.size
+
 
     # Update the state of the network using Little parallel update rule
     def ParallelUpdate(self):

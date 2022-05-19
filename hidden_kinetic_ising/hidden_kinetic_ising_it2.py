@@ -43,12 +43,12 @@ class HiddenIsing:  # Asymmetric Ising model with hidden activity simulation cla
         self.b_0 = np.zeros(self.b_size)
 
     def random_wiring(self):  # Set random values for J
-        self.H = self.rng.random(self.visible_size) * 2 - 1
-        self.J = self.rng.random((self.visible_size, self.visible_size)) / self.visible_size
-        self.M = self.rng.random((self.visible_size, self.b_size)) / self.visible_size
-        self.K = self.rng.random((self.b_size, self.visible_size)) / self.visible_size
-        self.L = self.rng.random((self.b_size, self.b_size)) / self.visible_size
-        self.b_0 = self.rng.random(self.b_size) * 2 - 1
+        self.H = self.rng.normal(loc=0.0, scale=1, size=self.visible_size) * 2 - 1
+        self.J = self.rng.normal(loc=0.0, scale=1, size=(self.visible_size, self.visible_size)) / self.visible_size
+        self.M = self.rng.normal(loc=0.0, scale=1, size=(self.visible_size, self.b_size)) / self.visible_size
+        self.K = self.rng.normal(loc=0.0, scale=1, size=(self.b_size, self.visible_size)) / self.visible_size
+        self.L = self.rng.normal(loc=0.0, scale=1, size=(self.b_size, self.b_size)) / self.visible_size
+        self.b_0 = self.rng.normal(loc=0.0, scale=1, size=self.b_size) * 2 - 1
 
         print('H', self.H)
         print('J', self.J)
